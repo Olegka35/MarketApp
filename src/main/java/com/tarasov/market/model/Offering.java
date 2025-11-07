@@ -1,27 +1,36 @@
 package com.tarasov.market.model;
 
+import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NonNull;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Table;
+import lombok.NoArgsConstructor;
 
-import java.math.BigInteger;
+import java.math.BigDecimal;
 
+@Entity
+@Table(name = "offerings")
 @Data
-@Table("offerings")
+@NoArgsConstructor
 public class Offering {
     @Id
-    private BigInteger id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @NonNull
+    @Column(nullable = false)
     private String title;
 
-    @NonNull
+    @Column(nullable = false)
     private String description;
 
-    @NonNull
+    @Column(nullable = false)
     private String imgPath;
 
-    @NonNull
-    private Long price;
+    @Column(nullable = false)
+    private BigDecimal price;
+
+    public Offering(String title, String description, String imgPath, BigDecimal price) {
+        this.title = title;
+        this.description = description;
+        this.imgPath = imgPath;
+        this.price = price;
+    }
 }

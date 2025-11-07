@@ -12,6 +12,13 @@ CREATE SEQUENCE IF NOT EXISTS orders_id_seq
     MAXVALUE 9223372036854775807
     CACHE 1;
 
+CREATE SEQUENCE IF NOT EXISTS order_items_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;
+
 CREATE TABLE IF NOT EXISTS offerings
 (
     id bigint NOT NULL DEFAULT nextval('offerings_id_seq'::regclass),
@@ -32,10 +39,12 @@ CREATE TABLE IF NOT EXISTS orders
 
 CREATE TABLE IF NOT EXISTS order_items
 (
+    id bigint NOT NULL DEFAULT nextval('order_items_id_seq'::regclass),
     order_id bigint NOT NULL,
     offering_id bigint NOT NULL,
     amount integer NOT NULL,
     unit_price bigint NOT NULL,
+    CONSTRAINT order_items_pkey PRIMARY KEY (id),
     CONSTRAINT order_items_offering_id_fkey FOREIGN KEY (offering_id)
     REFERENCES offerings (id) MATCH SIMPLE
     ON UPDATE NO ACTION
