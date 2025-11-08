@@ -79,6 +79,6 @@ INSERT INTO cart (offering_id, amount) VALUES (2, 2),
 
 INSERT INTO orders (total_price) VALUES (1000);
 
-INSERT INTO order_items (order_id, offering_id, amount)
+INSERT INTO order_items (order_id, offering_id, amount, unit_price)
 VALUES (1, 2, 2, 400),
        (1, 2, 1, 200);
