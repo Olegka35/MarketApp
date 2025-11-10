@@ -4,8 +4,12 @@ import com.tarasov.market.model.Offering;
 import com.tarasov.market.repository.OfferingRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,6 +19,42 @@ public class OfferingRepositoryTest extends MarketAppApplicationTest {
     private OfferingRepository offeringRepository;
 
     @Test
+    public void findAllOfferingsTest() {
+        assertThat(offeringRepository.findAll()).hasSize(5);
+    }
+
+    @Test
+    public void findOfferingsWithPriceSortingTest() {
+        List<Offering> offerings = offeringRepository.findAll(Sort.by(Sort.Direction.ASC, "price"));
+        assertThat(offerings).hasSize(5);
+        assertThat(offerings.getFirst().getPrice()).isEqualTo(new BigDecimal("990"));
+        assertThat(offerings.getLast().getPrice()).isEqualTo(new BigDecimal("2790"));
+    }
+
+    @Test
+    public void findOfferingsWithPriceSortingAndPaginationTest() {
+        List<Offering> offerings = offeringRepository
+                .findAll(PageRequest.of(1, 3, Sort.by(Sort.Direction.ASC, "price")))
+                .getContent();
+        assertThat(offerings).hasSize(2);
+    }
+
+    @Test
+    public void findOfferingsWithNameSortingTest() {
+        List<Offering> offerings = offeringRepository.findAll(Sort.by(Sort.Direction.ASC, "title"));
+        assertThat(offerings).hasSize(5);
+        assertThat(offerings.getFirst().getTitle()).isEqualTo("Беспроводная мышь");
+        assertThat(offerings.getLast().getTitle()).isEqualTo("Термокружка 500 мл");
+    }
+
+    @Test
+    public void searchOfferingsByTitleTest() {
+        List<Offering> offerings = offeringRepository.findByTitleContainsOrDescriptionContains(" и ", " и ");
+        assertThat(offerings).hasSize(2);
+    }
+
+    @Test
+    @Transactional
     public void addOfferingTest() {
         Offering offering = offeringRepository.save(
                 new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000))
@@ -27,6 +67,7 @@ public class OfferingRepositoryTest extends MarketAppApplicationTest {
     }
 
     @Test
+    @Transactional
     public void deleteCreatedOfferingTest() {
         Offering offering = offeringRepository.save(
                 new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000))
