@@ -1,8 +1,11 @@
 package com.tarasov.market.controller;
 
 import com.tarasov.market.model.dto.ActionType;
+import com.tarasov.market.model.dto.CartResponse;
 import com.tarasov.market.model.dto.SortType;
+import com.tarasov.market.service.CartService;
 import jakarta.validation.constraints.Positive;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +14,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
+@RequiredArgsConstructor
 public class CartController {
 
+    private final CartService cartService;
+
     @GetMapping("/cart/items")
-    public String loadCartPage() {
+    public String loadCartPage(Model model) {
+        CartResponse cartResponse = cartService.getCartItems();
+        model.addAttribute("items", cartResponse.getCartItems());
+        model.addAttribute("total", cartResponse.getTotalPrice());
         return "cart";
     }
 

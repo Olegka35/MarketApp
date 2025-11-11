@@ -1,4 +1,4 @@
-package com.tarasov.market.service;
+package com.tarasov.market.service.impl;
 
 
 import com.tarasov.market.model.Offering;
@@ -6,6 +6,7 @@ import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
 import com.tarasov.market.model.dto.SortType;
 import com.tarasov.market.repository.OfferingRepository;
+import com.tarasov.market.service.OfferingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
