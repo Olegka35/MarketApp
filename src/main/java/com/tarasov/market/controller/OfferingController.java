@@ -45,8 +45,7 @@ public class OfferingController {
     @GetMapping("/items/{id}")
     public String loadOfferingPage(@PathVariable @Positive long id,
                                    Model model) {
-        model.addAttribute("paging",
-                new PageInfo(10, 1, false, false));
+        model.addAttribute("item", offeringService.getOffering(id));
         return "item";
     }
 

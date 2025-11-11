@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 
 @Service
@@ -18,6 +20,12 @@ import org.springframework.stereotype.Service;
 public class OfferingServiceImpl implements OfferingService {
 
     private final OfferingRepository offeringRepository;
+
+    @Override
+    public OfferingDto getOffering(long id) {
+        return OfferingDto.from(offeringRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+    }
 
     @Override
     public OfferingPage getOfferings(String search, SortType sortType, int pageNumber, int pageSize) {
