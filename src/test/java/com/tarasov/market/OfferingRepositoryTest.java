@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OfferingRepositoryTest extends MarketAppApplicationTest {
 
@@ -74,5 +76,29 @@ public class OfferingRepositoryTest extends MarketAppApplicationTest {
         );
         offeringRepository.delete(offering);
         assertThat(offeringRepository.existsById(offering.getId())).isFalse();
+    }
+
+    @Test
+    public void getOfferingFromCartTest() {
+        Optional<Offering> offering = offeringRepository.findById(2L);
+        assertTrue(offering.isPresent());
+        assertEquals(2L, offering.get().getId());
+        assertEquals("Беспроводная мышь", offering.get().getTitle());
+        assertEquals(2, offering.get().getCartItem().getAmount());
+    }
+
+    @Test
+    public void getOfferingNotInCartTest() {
+        Optional<Offering> offering = offeringRepository.findById(3L);
+        assertTrue(offering.isPresent());
+        assertEquals(3L, offering.get().getId());
+        assertEquals("Рюкзак городской", offering.get().getTitle());
+        assertNull(offering.get().getCartItem());
+    }
+
+    @Test
+    public void getNonExistingOfferingTest() {
+        Optional<Offering> offering = offeringRepository.findById(400L);
+        assertFalse(offering.isPresent());
     }
 }

@@ -27,6 +27,9 @@ public class Offering {
     @Column(nullable = false)
     private BigDecimal price;
 
+    @OneToOne(mappedBy = "offering")
+    private CartItem cartItem;
+
     public Offering(String title, String description, String imgPath, BigDecimal price) {
         this.title = title;
         this.description = description;
