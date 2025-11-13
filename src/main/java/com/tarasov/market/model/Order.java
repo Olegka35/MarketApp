@@ -24,6 +24,6 @@ public class Order {
     @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
 
-    @OneToMany
+    @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
 }
