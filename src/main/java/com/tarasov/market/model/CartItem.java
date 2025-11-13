@@ -11,14 +11,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CartItem {
     @Id
-    @Column(name = "offering_id")
-    private Long offeringId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @OneToOne
-    @MapsId
     @JoinColumn(name = "offering_id", referencedColumnName = "id")
     private Offering offering;
 
     @Column(nullable = false)
     private int amount;
+
+    public CartItem(Offering offering, int amount) {
+        this.offering = offering;
+        this.amount = amount;
+    }
 }

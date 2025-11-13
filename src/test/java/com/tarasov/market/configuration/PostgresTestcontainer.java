@@ -1,4 +1,4 @@
-package com.tarasov.market;
+package com.tarasov.market.configuration;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.PostgreSQLContainer;

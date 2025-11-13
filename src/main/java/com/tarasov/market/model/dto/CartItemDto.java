@@ -13,7 +13,7 @@ public record CartItemDto(
         int count
 ) {
     public static CartItemDto from(CartItem cartItem) {
-        return new CartItemDto(cartItem.getOfferingId(),
+        return new CartItemDto(cartItem.getOffering().getId(),
                 cartItem.getOffering().getTitle(),
                 cartItem.getOffering().getDescription(),
                 cartItem.getOffering().getImgPath(),

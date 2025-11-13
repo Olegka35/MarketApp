@@ -4,6 +4,7 @@ import com.tarasov.market.model.dto.ActionType;
 import com.tarasov.market.model.dto.CartResponse;
 import com.tarasov.market.model.dto.SortType;
 import com.tarasov.market.service.CartService;
+import com.tarasov.market.service.OfferingService;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class CartController {
 
     private final CartService cartService;
+    private final OfferingService offeringService;
 
     @GetMapping("/cart/items")
     public String loadCartPage(Model model) {
@@ -31,6 +33,10 @@ public class CartController {
     public String updateCartFromCartPage(@RequestParam @Positive long id,
                                          @RequestParam ActionType action,
                                          Model model) {
+        updateCart(id, action);
+        CartResponse cartResponse = cartService.getCartItems();
+        model.addAttribute("items", cartResponse.getCartItems());
+        model.addAttribute("total", cartResponse.getTotalPrice());
         return "cart";
     }
 
@@ -41,6 +47,7 @@ public class CartController {
                                          @RequestParam(defaultValue = "1") @Positive int pageNumber,
                                          @RequestParam(defaultValue = "5") @Positive int pageSize,
                                          @RequestParam ActionType action) {
+        updateCart(id, action);
         return String.format("redirect:/items?search=%s&sort=%s&pageNumber=%d&pageSize=%d",
                 search, sort, pageNumber, pageSize);
     }
@@ -49,6 +56,16 @@ public class CartController {
     public String updateCartFromOfferingPage(@PathVariable @Positive long id,
                                              @RequestParam ActionType action,
                                              Model model) {
+        updateCart(id, action);
+        model.addAttribute("item", offeringService.getOffering(id));
         return "item";
+    }
+
+    private void updateCart(long offeringId, ActionType action) {
+        if (action.equals(ActionType.MINUS)) {
+            cartService.removeCartItem(offeringId);
+        } else if (action.equals(ActionType.PLUS)) {
+            cartService.addCartItem(offeringId);
+        }
     }
 }
