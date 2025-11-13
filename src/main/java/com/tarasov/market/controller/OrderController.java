@@ -38,6 +38,7 @@ public class OrderController {
 
     @PostMapping("/buy")
     public String createNewOrder() {
-        return "redirect:/orders/{id}?newOrder=true";
+        OrderDto order = orderService.createOrderFromCart();
+        return String.format("redirect:/orders/%d?newOrder=true", order.id());
     }
 }
