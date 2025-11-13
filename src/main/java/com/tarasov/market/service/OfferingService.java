@@ -3,7 +3,7 @@ package com.tarasov.market.service;
 
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
-import com.tarasov.market.model.dto.SortType;
+import com.tarasov.market.model.dto.type.SortType;
 
 
 public interface OfferingService {

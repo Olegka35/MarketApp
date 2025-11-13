@@ -1,8 +1,8 @@
 package com.tarasov.market.controller;
 
-import com.tarasov.market.model.dto.ActionType;
+import com.tarasov.market.model.dto.type.ActionType;
 import com.tarasov.market.model.dto.CartResponse;
-import com.tarasov.market.model.dto.SortType;
+import com.tarasov.market.model.dto.type.SortType;
 import com.tarasov.market.service.CartService;
 import com.tarasov.market.service.OfferingService;
 import jakarta.validation.constraints.Positive;
@@ -63,9 +63,11 @@ public class CartController {
 
     private void updateCart(long offeringId, ActionType action) {
         if (action.equals(ActionType.MINUS)) {
-            cartService.removeCartItem(offeringId);
+            cartService.removeOneCartItem(offeringId);
         } else if (action.equals(ActionType.PLUS)) {
-            cartService.addCartItem(offeringId);
+            cartService.addOneCartItem(offeringId);
+        } else if (action.equals(ActionType.DELETE)) {
+            cartService.deleteCartItem(offeringId);
         }
     }
 }

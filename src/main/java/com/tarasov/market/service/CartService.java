@@ -5,6 +5,7 @@ import com.tarasov.market.model.dto.CartResponse;
 
 public interface CartService {
     CartResponse getCartItems();
-    void addCartItem(Long offeringId);
-    void removeCartItem(Long offeringId);
+    void addOneCartItem(Long offeringId);
+    void removeOneCartItem(Long offeringId);
+    void deleteCartItem(Long offeringId);
 }

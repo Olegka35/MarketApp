@@ -38,7 +38,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void addCartItem(Long offeringId) {
+    public void addOneCartItem(Long offeringId) {
         cartRepository.findByOffering_Id(offeringId)
                 .ifPresentOrElse(
                         item -> {
@@ -55,7 +55,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void removeCartItem(Long offeringId) {
+    public void removeOneCartItem(Long offeringId) {
         CartItem item = cartRepository.findByOffering_Id(offeringId)
                 .orElseThrow(() -> new EntityNotFoundException("Cart Item not found"));
         if (item.getAmount() == 1) {
@@ -65,5 +65,14 @@ public class CartServiceImpl implements CartService {
             item.setAmount(item.getAmount() - 1);
             cartRepository.save(item);
         }
+    }
+
+    @Override
+    @Transactional
+    public void deleteCartItem(Long offeringId) {
+        CartItem item = cartRepository.findByOffering_Id(offeringId)
+                .orElseThrow(() -> new EntityNotFoundException("Cart Item not found"));
+        item.getOffering().setCartItem(null);
+        cartRepository.delete(item);
     }
 }

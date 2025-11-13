@@ -1,4 +1,4 @@
-package com.tarasov.market.model.dto;
+package com.tarasov.market.model.dto.type;
 
 public enum SortType {
     NO,
