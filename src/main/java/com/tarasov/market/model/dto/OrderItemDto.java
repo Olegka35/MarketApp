@@ -13,7 +13,7 @@ public record OrderItemDto(
     public static OrderItemDto from(OrderItem orderItem) {
         return new OrderItemDto(orderItem.getId(),
                 orderItem.getOffering().getTitle(),
-                orderItem.getOffering().getPrice(),
+                orderItem.getPrice(),
                 orderItem.getAmount());
     }
 }
