@@ -1,7 +1,7 @@
-package com.tarasov.market;
+package com.tarasov.market.repository;
 
+import com.tarasov.market.MarketAppApplicationTest;
 import com.tarasov.market.model.Offering;
-import com.tarasov.market.repository.OfferingRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;

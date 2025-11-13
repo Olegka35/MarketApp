@@ -30,6 +30,9 @@ public class OrderController {
     public String getOrderPage(@PathVariable @Positive long id,
                                @RequestParam(defaultValue = "false") boolean newOrder,
                                Model model) {
+        OrderDto order = orderService.getOrderById(id);
+        model.addAttribute("order", order);
+        model.addAttribute("newOrder", newOrder);
         return "order";
     }
 
