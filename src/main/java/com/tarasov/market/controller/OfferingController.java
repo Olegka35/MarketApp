@@ -62,8 +62,7 @@ public class OfferingController {
     public String createNewOffering(@RequestParam @NotBlank String title,
                                     @RequestParam @NotBlank String description,
                                     @RequestParam MultipartFile image,
-                                    @RequestParam @Positive BigDecimal price,
-                                    Model model) {
+                                    @RequestParam @Positive BigDecimal price) {
         Long newOfferingId = offeringService.createOffering(title, description, price, image);
         return String.format("redirect:/items/%d", newOfferingId);
     }
