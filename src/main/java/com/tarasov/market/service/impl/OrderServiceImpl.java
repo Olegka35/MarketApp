@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -50,9 +49,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalPrice = calculateTotalPrice(orderItems);
         order.setOrderItems(orderItems);
         order.setTotalPrice(totalPrice);
-        cartItems.forEach(cartItem -> {
-            cartItem.getOffering().setCartItem(null);
-        });
+        cartItems.forEach(cartItem -> cartItem.getOffering().setCartItem(null));
         cartRepository.deleteAll();
         return OrderDto.from(orderRepository.save(order));
     }

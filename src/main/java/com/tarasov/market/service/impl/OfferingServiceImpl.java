@@ -1,7 +1,6 @@
 package com.tarasov.market.service.impl;
 
 
-import com.tarasov.market.model.ImageUploadException;
 import com.tarasov.market.model.Offering;
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
@@ -10,7 +9,6 @@ import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.ImageService;
 import com.tarasov.market.service.OfferingService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -20,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 
 @Service
