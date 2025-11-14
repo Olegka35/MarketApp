@@ -101,4 +101,19 @@ public class OfferingRepositoryTest extends MarketAppApplicationTest {
         Optional<Offering> offering = offeringRepository.findById(400L);
         assertFalse(offering.isPresent());
     }
+
+    @Test
+    @Transactional
+    public void createOfferingTest() {
+        Offering offeringRequest = new Offering("Кроссовки",
+                "Кроссовки New Balance",
+                "newbalance.img",
+                BigDecimal.valueOf(20000));
+        Offering offering = offeringRepository.save(offeringRequest);
+
+        assertEquals("Кроссовки", offering.getTitle());
+        assertEquals("Кроссовки New Balance", offering.getDescription());
+        assertEquals("newbalance.img", offering.getImgPath());
+        assertEquals(BigDecimal.valueOf(20000), offering.getPrice());
+    }
 }

@@ -1,19 +1,29 @@
 package com.tarasov.market.service.impl;
 
 
+import com.tarasov.market.model.ImageUploadException;
 import com.tarasov.market.model.Offering;
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
 import com.tarasov.market.model.dto.type.SortType;
 import com.tarasov.market.repository.OfferingRepository;
+import com.tarasov.market.service.ImageService;
 import com.tarasov.market.service.OfferingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 
 @Service
@@ -21,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class OfferingServiceImpl implements OfferingService {
 
     private final OfferingRepository offeringRepository;
+    private final ImageService imageService;
 
     @Override
     public OfferingDto getOffering(long id) {
@@ -42,6 +53,16 @@ public class OfferingServiceImpl implements OfferingService {
         }
         return new OfferingPage(offeringPage.getContent().stream().map(OfferingDto::from).toList(),
                 offeringPage.getTotalPages());
+    }
+
+    @Override
+    @Transactional
+    public Long createOffering(String title, String description, BigDecimal price, MultipartFile image) {
+        Offering offering = new Offering(title, description, image.getOriginalFilename(), price);
+        offering = offeringRepository.save(offering);
+
+        imageService.uploadImage(image);
+        return offering.getId();
     }
 
     private String convertSortType(SortType sortType) {

@@ -17,6 +17,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -25,6 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +41,9 @@ public class OfferingServiceTest {
 
     @Mock
     private OfferingRepository offeringRepository;
+
+    @Mock
+    private ImageService imageService;
 
     @Test
     public void getOfferingByIdTest() {
@@ -126,6 +133,23 @@ public class OfferingServiceTest {
         offeringService.getOfferings(search, SortType.NO, 2, 10);
 
         verify(offeringRepository).findByTitleContainsOrDescriptionContains(search, search, pageRequest);
+    }
+
+    @Test
+    public void createOfferingTest() {
+        MockMultipartFile mockImage = new MockMultipartFile("image",
+                "NewBalance.png",
+                MediaType.IMAGE_PNG_VALUE,
+                "Test image content".getBytes()
+        );
+        when(offeringRepository.save(any(Offering.class))).thenAnswer(i -> i.getArgument(0));
+
+        offeringService.createOffering("Кроссовки",
+                "Кроссовки New Balance",
+                BigDecimal.valueOf(20000),
+                mockImage
+        );
+        verify(imageService).uploadImage(mockImage);
     }
 
     private Offering generateTestOffering(long id) {

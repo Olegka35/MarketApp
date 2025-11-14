@@ -5,3 +5,9 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     show-sql: true
+  web:
+    resources:
+      static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/, file:${offering.images-directory}
+
+offering:
+  images-directory: C:/Users/olegk/IdeaProjects/MarketApp/offering_images

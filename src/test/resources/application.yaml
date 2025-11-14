@@ -4,3 +4,6 @@ spring:
       mode: always
   jpa:
     show-sql: true
+
+offering:
+  images-directory: C:/Users/olegk/IdeaProjects/MarketApp/offering_images_test

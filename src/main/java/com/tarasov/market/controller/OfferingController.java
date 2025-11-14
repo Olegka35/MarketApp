@@ -6,14 +6,18 @@ import com.tarasov.market.model.dto.OfferingPage;
 import com.tarasov.market.model.dto.PageInfo;
 import com.tarasov.market.model.dto.type.SortType;
 import com.tarasov.market.service.OfferingService;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,6 +51,21 @@ public class OfferingController {
                                    Model model) {
         model.addAttribute("item", offeringService.getOffering(id));
         return "item";
+    }
+
+    @GetMapping("/items/new")
+    public String openNewOfferingPage() {
+        return "new_item";
+    }
+
+    @PostMapping("/items/new")
+    public String createNewOffering(@RequestParam @NotBlank String title,
+                                    @RequestParam @NotBlank String description,
+                                    @RequestParam MultipartFile image,
+                                    @RequestParam @Positive BigDecimal price,
+                                    Model model) {
+        Long newOfferingId = offeringService.createOffering(title, description, price, image);
+        return String.format("redirect:/items/%d", newOfferingId);
     }
 
     private List<? extends List<OfferingDto>> groupOfferings(List<OfferingDto> offerings, int rowSize) {
