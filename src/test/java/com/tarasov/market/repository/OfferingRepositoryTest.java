@@ -14,7 +14,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OfferingRepositoryTest extends AbstractRepositoryTest {
+public class OfferingRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
     private OfferingRepository offeringRepository;

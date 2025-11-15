@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OrderRepositoryTest extends AbstractRepositoryTest {
+public class OrderRepositoryTest extends BaseRepositoryTest {
 
     @Autowired
     private OrderRepository orderRepository;
