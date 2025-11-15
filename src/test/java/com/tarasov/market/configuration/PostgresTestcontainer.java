@@ -8,5 +8,6 @@ public final class PostgresTestcontainer {
 
     @Container
     @ServiceConnection
-    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:17.6");
+    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:17.6")
+            .withInitScripts("schema.sql", "data.sql");
 }
