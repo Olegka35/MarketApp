@@ -1,6 +1,5 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.MarketAppApplicationTest;
 import com.tarasov.market.model.Offering;
 import com.tarasov.market.model.Order;
 import com.tarasov.market.model.OrderItem;
@@ -14,7 +13,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OrderRepositoryTest extends MarketAppApplicationTest {
+public class OrderRepositoryTest extends AbstractRepositoryTest {
 
     @Autowired
     private OrderRepository orderRepository;

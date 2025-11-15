@@ -1,6 +1,5 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.MarketAppApplicationTest;
 import com.tarasov.market.model.CartItem;
 import com.tarasov.market.model.Offering;
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class CartRepositoryTest extends MarketAppApplicationTest {
+public class CartRepositoryTest extends AbstractRepositoryTest {
 
     @Autowired
     private CartRepository cartRepository;

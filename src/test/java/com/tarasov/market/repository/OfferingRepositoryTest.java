@@ -1,6 +1,5 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.MarketAppApplicationTest;
 import com.tarasov.market.model.Offering;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OfferingRepositoryTest extends MarketAppApplicationTest {
+public class OfferingRepositoryTest extends AbstractRepositoryTest {
 
     @Autowired
     private OfferingRepository offeringRepository;
