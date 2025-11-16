@@ -20,7 +20,7 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getOrdersTest() {
-        List<Order> orders = orderRepository.findAll();
+        List<Order> orders = orderRepository.findAllWithItems();
         assertEquals(1, orders.size());
     }
 

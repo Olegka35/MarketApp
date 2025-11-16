@@ -26,7 +26,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDto> getOrders() {
-        List<Order> orders = orderRepository.findAll();
+        List<Order> orders = orderRepository.findAllWithItems();
         return orders.stream().map(OrderDto::from).toList();
     }
 
@@ -40,7 +40,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderDto createOrderFromCart() {
-        List<CartItem> cartItems = cartRepository.findAll();
+        List<CartItem> cartItems = cartRepository.findAllWithOffering();
         if (cartItems.isEmpty()) {
             throw new NoResultException("The cart is empty");
         }

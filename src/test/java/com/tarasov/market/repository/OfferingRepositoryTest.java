@@ -21,12 +21,12 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void findAllOfferingsTest() {
-        assertThat(offeringRepository.findAll()).hasSize(5);
+        assertThat(offeringRepository.findAllWithCart()).hasSize(5);
     }
 
     @Test
     public void findOfferingsWithPriceSortingTest() {
-        List<Offering> offerings = offeringRepository.findAll(Sort.by(Sort.Direction.ASC, "price"));
+        List<Offering> offerings = offeringRepository.findAllWithCart(Sort.by(Sort.Direction.ASC, "price"));
         assertThat(offerings).hasSize(5);
         assertThat(offerings.getFirst().getPrice()).isEqualTo(new BigDecimal("990"));
         assertThat(offerings.getLast().getPrice()).isEqualTo(new BigDecimal("2790"));
@@ -35,14 +35,14 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
     @Test
     public void findOfferingsWithPriceSortingAndPaginationTest() {
         List<Offering> offerings = offeringRepository
-                .findAll(PageRequest.of(1, 3, Sort.by(Sort.Direction.ASC, "price")))
+                .findAllWithCart(PageRequest.of(1, 3, Sort.by(Sort.Direction.ASC, "price")))
                 .getContent();
         assertThat(offerings).hasSize(2);
     }
 
     @Test
     public void findOfferingsWithNameSortingTest() {
-        List<Offering> offerings = offeringRepository.findAll(Sort.by(Sort.Direction.ASC, "title"));
+        List<Offering> offerings = offeringRepository.findAllWithCart(Sort.by(Sort.Direction.ASC, "title"));
         assertThat(offerings).hasSize(5);
         assertThat(offerings.getFirst().getTitle()).isEqualTo("Беспроводная мышь");
         assertThat(offerings.getLast().getTitle()).isEqualTo("Термокружка 500 мл");

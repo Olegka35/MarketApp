@@ -71,7 +71,7 @@ public class OfferingServiceTest {
     @Test
     public void searchOfferingsTest_checkResponseProcessing() {
         Page<Offering> offeringPage = new PageImpl<>(List.of(generateTestOffering(1L), generateTestOffering(4L)));
-        when(offeringRepository.findAll(PageRequest.of(0, 5)))
+        when(offeringRepository.findAllWithCart(PageRequest.of(0, 5)))
                 .thenReturn(offeringPage);
 
         OfferingPage page = offeringService.getOfferings("", SortType.NO, 1, 5);
@@ -84,29 +84,29 @@ public class OfferingServiceTest {
         assertEquals(3, lastOffering.count());
         assertEquals(1, page.getTotalPages());
 
-        verify(offeringRepository).findAll(PageRequest.of(0, 5));
+        verify(offeringRepository).findAllWithCart(PageRequest.of(0, 5));
     }
 
     @Test
     public void searchOfferingsTest_checkSearchParametersProcessing_emptyString_sortByPrice() {
         PageRequest pageRequest = PageRequest.of(1, 10)
                 .withSort(Sort.by(Sort.Direction.ASC, "price"));
-        when(offeringRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of()));
+        when(offeringRepository.findAllWithCart(pageRequest)).thenReturn(new PageImpl<>(List.of()));
 
         offeringService.getOfferings("", SortType.PRICE, 2, 10);
 
-        verify(offeringRepository).findAll(pageRequest);
+        verify(offeringRepository).findAllWithCart(pageRequest);
     }
 
     @Test
     public void searchOfferingsTest_checkSearchParametersProcessing_emptyString_sortByTitle() {
         PageRequest pageRequest = PageRequest.of(1, 10)
                 .withSort(Sort.by(Sort.Direction.ASC, "title"));
-        when(offeringRepository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of()));
+        when(offeringRepository.findAllWithCart(pageRequest)).thenReturn(new PageImpl<>(List.of()));
 
         offeringService.getOfferings("", SortType.ALPHA, 2, 10);
 
-        verify(offeringRepository).findAll(pageRequest);
+        verify(offeringRepository).findAllWithCart(pageRequest);
     }
 
     @Test

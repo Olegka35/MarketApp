@@ -42,7 +42,7 @@ public class OfferingServiceImpl implements OfferingService {
         }
         Page<Offering> offeringPage;
         if (search.isEmpty()) {
-            offeringPage = offeringRepository.findAll(pageRequest);
+            offeringPage = offeringRepository.findAllWithCart(pageRequest);
         } else {
             offeringPage = offeringRepository.findByTitleContainsOrDescriptionContains(search, search, pageRequest);
         }

@@ -47,7 +47,7 @@ public class CartServiceTest {
         offering2.setId(5L);
         offering2.setPrice(BigDecimal.valueOf(200));
 
-        when(cartRepository.findAll())
+        when(cartRepository.findAllWithOffering())
                 .thenReturn(List.of(new CartItem(offering1, 1), new CartItem(offering2, 4)));
 
         CartResponse cart = cartService.getCartItems();

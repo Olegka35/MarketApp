@@ -41,7 +41,7 @@ public class OrderServiceTest {
 
     @Test
     public void getOrdersTest() {
-        when(orderRepository.findAll()).thenReturn(generateTestOrders());
+        when(orderRepository.findAllWithItems()).thenReturn(generateTestOrders());
 
         List<OrderDto> orders = orderService.getOrders();
 
@@ -92,7 +92,7 @@ public class OrderServiceTest {
 
     @Test
     public void createOrderTest_emptyCart() {
-        when(cartRepository.findAll()).thenReturn(List.of());
+        when(cartRepository.findAllWithOffering()).thenReturn(List.of());
         assertThrows(NoResultException.class, () -> orderService.createOrderFromCart());
     }
 
@@ -106,7 +106,7 @@ public class OrderServiceTest {
         offering2.setId(5L);
         offering2.setPrice(BigDecimal.valueOf(200));
 
-        when(cartRepository.findAll())
+        when(cartRepository.findAllWithOffering())
                 .thenReturn(List.of(new CartItem(offering1, 1), new CartItem(offering2, 4)));
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));

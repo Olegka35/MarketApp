@@ -25,7 +25,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartResponse getCartItems() {
-        List<CartItemDto> cartItems = cartRepository.findAll()
+        List<CartItemDto> cartItems = cartRepository.findAllWithOffering()
                 .stream()
                 .map(CartItemDto::from)
                 .toList();

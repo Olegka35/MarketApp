@@ -19,7 +19,7 @@ public class CartRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void findAllCartItemsTest() {
-        assertThat(cartRepository.findAll())
+        assertThat(cartRepository.findAllWithOffering())
                 .hasSize(2);
     }
 
