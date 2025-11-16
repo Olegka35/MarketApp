@@ -48,7 +48,8 @@ public class CartServiceImpl implements CartService {
                         () -> {
                             Offering offering = offeringRepository.findById(offeringId)
                                     .orElseThrow(() -> new EntityNotFoundException("Offering not found"));
-                            cartRepository.save(new CartItem(offering, 1));
+                            CartItem newCartItem = new CartItem(offering, 1);
+                            offering.setCartItem(cartRepository.save(newCartItem));
                         }
                 );
     }

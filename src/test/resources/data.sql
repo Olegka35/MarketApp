@@ -12,4 +12,4 @@ INSERT INTO orders (total_price) VALUES (1000);
 
 INSERT INTO order_items (order_id, offering_id, amount, unit_price)
 VALUES (1, 2, 2, 400),
-       (1, 2, 1, 200);
+       (1, 3, 1, 200);
