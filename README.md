@@ -18,6 +18,7 @@ Market application to buy items.
 DB_URL={your DB url} (example: jdbc:postgresql://localhost:5432/market_db)
 DB_USERNAME={DB username}
 DB_PASSWORD={DB password}
+IMAGE_DIRECTORY={path to directory with offering images}
 ```
 
 ## 3. Start application
