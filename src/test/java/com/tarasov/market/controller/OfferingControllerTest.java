@@ -146,7 +146,7 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     @Transactional
-    public void createNewOfferingest() throws Exception {
+    public void createNewOfferingTest() throws Exception {
         MockMultipartFile image = new MockMultipartFile("image",
                 "NewBalance.png",
                 MediaType.IMAGE_PNG_VALUE,

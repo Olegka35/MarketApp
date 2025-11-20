@@ -3,4 +3,4 @@ spring:
     show-sql: true
 
 offering:
-  images-directory: C:/Users/olegk/IdeaProjects/MarketApp/offering_images_test
+  images-directory: ./offering_images_test

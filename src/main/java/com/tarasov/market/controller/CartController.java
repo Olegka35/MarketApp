@@ -31,13 +31,9 @@ public class CartController {
 
     @PostMapping("/cart/items")
     public String updateCartFromCartPage(@RequestParam @Positive long id,
-                                         @RequestParam ActionType action,
-                                         Model model) {
+                                         @RequestParam ActionType action) {
         updateCart(id, action);
-        CartResponse cartResponse = cartService.getCartItems();
-        model.addAttribute("items", cartResponse.getCartItems());
-        model.addAttribute("total", cartResponse.getTotalPrice());
-        return "cart";
+        return "redirect:/cart/items";
     }
 
     @PostMapping("/items")
@@ -54,11 +50,9 @@ public class CartController {
 
     @PostMapping("/items/{id}")
     public String updateCartFromOfferingPage(@PathVariable @Positive long id,
-                                             @RequestParam ActionType action,
-                                             Model model) {
+                                             @RequestParam ActionType action) {
         updateCart(id, action);
-        model.addAttribute("item", offeringService.getOffering(id));
-        return "item";
+        return String.format("redirect:/items?%d", id);
     }
 
     private void updateCart(long offeringId, ActionType action) {
