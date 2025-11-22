@@ -1,8 +1,4 @@
 spring:
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
   r2dbc:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -14,8 +10,6 @@ spring:
       max-idle-time: 30s
       max-life-time: 10m
       validation-query: SELECT 1
-  jpa:
-    show-sql: true
   web:
     resources:
       static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/, file:${offering.images-directory}
