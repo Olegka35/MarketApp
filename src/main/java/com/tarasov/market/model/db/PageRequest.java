@@ -1,4 +1,4 @@
-package com.tarasov.market.model.dto.db;
+package com.tarasov.market.model.db;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

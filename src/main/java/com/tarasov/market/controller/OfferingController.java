@@ -4,7 +4,7 @@ package com.tarasov.market.controller;
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
 import com.tarasov.market.model.dto.PageInfo;
-import com.tarasov.market.model.dto.type.SortType;
+import com.tarasov.market.model.type.SortType;
 import com.tarasov.market.service.OfferingService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;

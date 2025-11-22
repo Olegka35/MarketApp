@@ -1,8 +1,8 @@
 package com.tarasov.market.service.impl;
 
-import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Order;
-import com.tarasov.market.model.OrderItem;
+import com.tarasov.market.model.entity.CartItem;
+import com.tarasov.market.model.entity.Order;
+import com.tarasov.market.model.entity.OrderItem;
 import com.tarasov.market.model.dto.OrderDto;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OrderRepository;

@@ -1,4 +1,4 @@
-package com.tarasov.market.model.dto.db;
+package com.tarasov.market.model.db;
 
 import java.math.BigDecimal;
 

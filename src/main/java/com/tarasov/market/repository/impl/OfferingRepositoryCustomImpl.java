@@ -1,7 +1,7 @@
 package com.tarasov.market.repository.impl;
 
-import com.tarasov.market.model.dto.db.OfferingWithCartItem;
-import com.tarasov.market.model.dto.db.PageRequest;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import com.tarasov.market.model.db.PageRequest;
 import com.tarasov.market.repository.OfferingRepositoryCustom;
 import com.tarasov.market.repository.impl.sql.SQLConstants;
 import io.micrometer.common.util.StringUtils;

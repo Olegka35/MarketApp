@@ -1,4 +1,4 @@
-package com.tarasov.market.model;
+package com.tarasov.market.model.entity;
 
 
 import lombok.Data;

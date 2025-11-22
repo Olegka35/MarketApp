@@ -1,8 +1,8 @@
 package com.tarasov.market.controller;
 
-import com.tarasov.market.model.dto.type.ActionType;
+import com.tarasov.market.model.type.ActionType;
 import com.tarasov.market.model.dto.CartResponse;
-import com.tarasov.market.model.dto.type.SortType;
+import com.tarasov.market.model.type.SortType;
 import com.tarasov.market.service.CartService;
 import com.tarasov.market.service.OfferingService;
 import jakarta.validation.constraints.Positive;

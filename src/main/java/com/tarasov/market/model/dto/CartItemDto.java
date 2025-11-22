@@ -1,6 +1,6 @@
 package com.tarasov.market.model.dto;
 
-import com.tarasov.market.model.dto.db.OfferingWithCartItem;
+import com.tarasov.market.model.db.OfferingWithCartItem;
 
 import java.math.BigDecimal;
 

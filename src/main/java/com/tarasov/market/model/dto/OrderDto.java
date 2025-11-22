@@ -1,6 +1,6 @@
 package com.tarasov.market.model.dto;
 
-import com.tarasov.market.model.Order;
+import com.tarasov.market.model.entity.Order;
 
 import java.math.BigDecimal;
 import java.util.List;

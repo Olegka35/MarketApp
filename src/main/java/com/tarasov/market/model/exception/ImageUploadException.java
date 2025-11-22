@@ -1,4 +1,4 @@
-package com.tarasov.market.model.dto.exception;
+package com.tarasov.market.model.exception;
 
 public class ImageUploadException extends RuntimeException {
     public ImageUploadException(String message) {

@@ -1,7 +1,7 @@
 package com.tarasov.market.service.impl;
 
 
-import com.tarasov.market.model.CartItem;
+import com.tarasov.market.model.entity.CartItem;
 import com.tarasov.market.model.dto.CartItemDto;
 import com.tarasov.market.model.dto.CartResponse;
 import com.tarasov.market.repository.CartRepository;

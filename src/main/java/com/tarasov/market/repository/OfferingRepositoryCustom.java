@@ -1,7 +1,7 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.model.dto.db.OfferingWithCartItem;
-import com.tarasov.market.model.dto.db.PageRequest;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import com.tarasov.market.model.db.PageRequest;
 import reactor.core.publisher.Flux;
 
 import java.util.Optional;

@@ -3,7 +3,7 @@ package com.tarasov.market.service;
 
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
-import com.tarasov.market.model.dto.type.SortType;
+import com.tarasov.market.model.type.SortType;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 

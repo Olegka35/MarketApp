@@ -1,11 +1,11 @@
 package com.tarasov.market.service;
 
 
-import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Offering;
+import com.tarasov.market.model.entity.CartItem;
+import com.tarasov.market.model.entity.Offering;
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
-import com.tarasov.market.model.dto.type.SortType;
+import com.tarasov.market.model.type.SortType;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.impl.OfferingServiceImpl;
 import org.junit.jupiter.api.Test;
