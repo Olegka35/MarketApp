@@ -1,6 +1,6 @@
 package com.tarasov.market.service.impl;
 
-import com.tarasov.market.model.ImageUploadException;
+import com.tarasov.market.model.dto.exception.ImageUploadException;
 import com.tarasov.market.service.ImageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

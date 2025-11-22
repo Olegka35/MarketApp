@@ -2,19 +2,18 @@ package com.tarasov.market.service.impl;
 
 
 import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Offering;
 import com.tarasov.market.model.dto.CartItemDto;
 import com.tarasov.market.model.dto.CartResponse;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.CartService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.NoSuchElementException;
 
 @Service
 @AllArgsConstructor
@@ -24,56 +23,58 @@ public class CartServiceImpl implements CartService {
     private final OfferingRepository offeringRepository;
 
     @Override
-    public CartResponse getCartItems() {
-        List<CartItemDto> cartItems = cartRepository.findAllWithOffering()
-                .stream()
+    public Mono<CartResponse> getCartItems() {
+        return cartRepository.findAllWithOffering()
                 .map(CartItemDto::from)
-                .toList();
-        BigDecimal totalPrice = cartItems
-                .stream()
-                .map(item -> item.price().multiply(BigDecimal.valueOf(item.count())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return new CartResponse(cartItems, totalPrice);
+                .collectList()
+                .map(cartItems -> {
+                    BigDecimal totalPrice = cartItems
+                            .stream()
+                            .map(item -> item.price().multiply(BigDecimal.valueOf(item.count())))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return new CartResponse(cartItems, totalPrice);
+                });
     }
 
     @Override
     @Transactional
-    public void addOneCartItem(Long offeringId) {
-        cartRepository.findByOffering_Id(offeringId)
-                .ifPresentOrElse(
-                        item -> {
-                            item.setAmount(item.getAmount() + 1);
-                            cartRepository.save(item);
-                        },
-                        () -> {
-                            Offering offering = offeringRepository.findById(offeringId)
-                                    .orElseThrow(() -> new EntityNotFoundException("Offering not found"));
-                            CartItem newCartItem = new CartItem(offering, 1);
-                            offering.setCartItem(cartRepository.save(newCartItem));
-                        }
-                );
+    public Mono<Void> addOneCartItem(Long offeringId) {
+        return cartRepository.findByOfferingId(offeringId)
+                .switchIfEmpty(
+                        offeringRepository.findById(offeringId)
+                                .switchIfEmpty(Mono.error(new NoSuchElementException("Offering not found")))
+                                .flatMap(offering -> {
+                                    CartItem newCartItem = new CartItem(offeringId, 1);
+                                    return cartRepository.save(newCartItem);
+                                })
+                )
+                .flatMap(cartItem -> {
+                    cartItem.setAmount(cartItem.getAmount() + 1);
+                    return cartRepository.save(cartItem).then();
+                });
     }
 
     @Override
     @Transactional
-    public void removeOneCartItem(Long offeringId) {
-        CartItem item = cartRepository.findByOffering_Id(offeringId)
-                .orElseThrow(() -> new EntityNotFoundException("Cart Item not found"));
-        if (item.getAmount() == 1) {
-            item.getOffering().setCartItem(null);
-            cartRepository.delete(item);
-        } else {
-            item.setAmount(item.getAmount() - 1);
-            cartRepository.save(item);
-        }
+    public Mono<Void> removeOneCartItem(Long offeringId) {
+        return cartRepository.findByOfferingId(offeringId)
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
+                .flatMap(cartItem -> {
+                    if (cartItem.getAmount() == 1) {
+                        return cartRepository.delete(cartItem).then();
+                    } else {
+                        cartItem.setAmount(cartItem.getAmount() - 1);
+                        return cartRepository.save(cartItem).then();
+                    }
+                });
     }
 
     @Override
     @Transactional
-    public void deleteCartItem(Long offeringId) {
-        CartItem item = cartRepository.findByOffering_Id(offeringId)
-                .orElseThrow(() -> new EntityNotFoundException("Cart Item not found"));
-        item.getOffering().setCartItem(null);
-        cartRepository.delete(item);
+    public Mono<Void> deleteCartItem(Long offeringId) {
+        return cartRepository.existsByOfferingId(offeringId)
+                .filter(Boolean::booleanValue)
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
+                .then(cartRepository.deleteByOfferingId(offeringId));
     }
 }

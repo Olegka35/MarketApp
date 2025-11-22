@@ -1,11 +1,12 @@
 package com.tarasov.market.service;
 
 import com.tarasov.market.model.dto.CartResponse;
+import reactor.core.publisher.Mono;
 
 
 public interface CartService {
-    CartResponse getCartItems();
-    void addOneCartItem(Long offeringId);
-    void removeOneCartItem(Long offeringId);
-    void deleteCartItem(Long offeringId);
+    Mono<CartResponse> getCartItems();
+    Mono<Void> addOneCartItem(Long offeringId);
+    Mono<Void> removeOneCartItem(Long offeringId);
+    Mono<Void> deleteCartItem(Long offeringId);
 }

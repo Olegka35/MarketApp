@@ -29,4 +29,7 @@ public interface CartRepository extends ReactiveCrudRepository<CartItem, Long> {
 
     @Query("SELECT EXISTS(SELECT 1 FROM cart WHERE offering_id = :offeringId)")
     Mono<Boolean> existsByOfferingId(Long offeringId);
+
+    Mono<CartItem> findByOfferingId(Long offeringId);
+    Mono<Void> deleteByOfferingId(Long offeringId);
 }

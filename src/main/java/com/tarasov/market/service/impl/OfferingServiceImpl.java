@@ -4,21 +4,22 @@ package com.tarasov.market.service.impl;
 import com.tarasov.market.model.Offering;
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
+import com.tarasov.market.model.dto.db.PageRequest;
 import com.tarasov.market.model.dto.type.SortType;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.ImageService;
 import com.tarasov.market.service.OfferingService;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 
 @Service
@@ -29,41 +30,41 @@ public class OfferingServiceImpl implements OfferingService {
     private final ImageService imageService;
 
     @Override
-    public OfferingDto getOffering(long id) {
-        return OfferingDto.from(offeringRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
+    public Mono<OfferingDto> getOffering(long id) {
+        return offeringRepository.findByIdWithCart(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .map(OfferingDto::from);
     }
 
     @Override
-    public OfferingPage getOfferings(String search, SortType sortType, int pageNumber, int pageSize) {
-        PageRequest pageRequest = PageRequest.of(pageNumber - 1, pageSize);
+    public Mono<OfferingPage> getOfferings(String search, SortType sortType, int pageNumber, int pageSize) {
+        PageRequest pageRequest = new PageRequest(pageNumber, pageSize);
         if (!sortType.equals(SortType.NO)) {
-            pageRequest = pageRequest.withSort(Sort.by(Sort.Direction.ASC, convertSortType(sortType)));
+            pageRequest.setSortField(convertSortTypeToField(sortType));
         }
-        Page<Offering> offeringPage;
-        if (search.isEmpty()) {
-            offeringPage = offeringRepository.findAllWithCart(pageRequest);
-        } else {
-            offeringPage = offeringRepository.findByTitleContainsOrDescriptionContains(search, search, pageRequest);
-        }
-        return new OfferingPage(offeringPage.getContent().stream().map(OfferingDto::from).toList(),
-                offeringPage.getTotalPages());
+        Mono<Integer> offeringAmount = StringUtils.isEmpty(search)
+                ? offeringRepository.count().map(Long::intValue)
+                : offeringRepository.countByTitleContainingOrDescriptionContaining(search, search);
+        return Mono.zip(offeringRepository.findOfferings(pageRequest, Optional.ofNullable(search))
+                                .map(OfferingDto::from).collectList(),
+                        offeringAmount)
+                .map(tuple ->
+                        new OfferingPage(tuple.getT1(), (tuple.getT2() + pageSize - 1) / pageSize));
     }
 
     @Override
     @Transactional
-    public Long createOffering(String title, String description, BigDecimal price, MultipartFile image) {
+    public Mono<Long> createOffering(String title, String description, BigDecimal price, MultipartFile image) {
         Offering offering = new Offering(title, description, image.getOriginalFilename(), price);
-        offering = offeringRepository.save(offering);
-
-        imageService.uploadImage(image);
-        return offering.getId();
+        return offeringRepository.save(offering)
+                .doOnSuccess(createdOffering -> imageService.uploadImage(image))
+                .flatMap(createdOffering -> Mono.just(createdOffering.getId()));
     }
 
-    private String convertSortType(SortType sortType) {
+    private String convertSortTypeToField(SortType sortType) {
         return switch (sortType) {
-            case ALPHA -> "title";
-            case PRICE -> "price";
+            case ALPHA -> "offering_title";
+            case PRICE -> "offering_price";
             default -> throw new IllegalArgumentException("Sort is not applicable");
         };
     }
