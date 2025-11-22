@@ -15,11 +15,11 @@ public class CartItem {
     @Id
     private Long id;
 
-    private Offering offering;
+    private Long offeringId;
     private int amount;
 
-    public CartItem(Offering offering, int amount) {
-        this.offering = offering;
+    public CartItem(Long offeringId, int amount) {
+        this.offeringId = offeringId;
         this.amount = amount;
     }
 }

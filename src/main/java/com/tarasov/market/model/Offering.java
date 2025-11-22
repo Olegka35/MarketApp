@@ -19,7 +19,6 @@ public class Offering {
     private String description;
     private String imgPath;
     private BigDecimal price;
-    private CartItem cartItem;
 
     public Offering(String title, String description, String imgPath, BigDecimal price) {
         this.title = title;
