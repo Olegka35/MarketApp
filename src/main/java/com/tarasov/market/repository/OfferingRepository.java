@@ -2,35 +2,29 @@ package com.tarasov.market.repository;
 
 
 import com.tarasov.market.model.Offering;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import com.tarasov.market.model.dto.db.OfferingWithCartItem;
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 
 @Repository
-public interface OfferingRepository extends JpaRepository<Offering, Long> {
+public interface OfferingRepository extends OfferingRepositoryCustom, ReactiveCrudRepository<Offering, Long> {
 
-    @EntityGraph(attributePaths = {"cartItem"})
-    @Query("select o from Offering o")
-    List<Offering> findAllWithCart();
+    @Query("""
+    SELECT o.id offering_id,
+           o.title offering_title,
+           o.description offering_description,
+           o.img_path offering_img_path,
+           o.price offering_price,
+           c.id cart_item_id,
+           c.amount amount_in_cart
+    FROM offerings o
+    LEFT JOIN cart c ON o.id = c.offering_id
+    """)
+    Flux<OfferingWithCartItem> findAllWithCart();
 
-    @EntityGraph(attributePaths = {"cartItem"})
-    @Query("select o from Offering o")
-    List<Offering> findAllWithCart(Sort sort);
-
-    @EntityGraph(attributePaths = {"cartItem"})
-    @Query("select o from Offering o")
-    Page<Offering> findAllWithCart(Pageable pageable);
-
-    @EntityGraph(attributePaths = {"cartItem"})
-    List<Offering> findByTitleContainsOrDescriptionContains(String title, String description);
-
-    @EntityGraph(attributePaths = {"cartItem"})
-    Page<Offering> findByTitleContainsOrDescriptionContains(String title, String description, Pageable pageable);
+    Mono<Integer> countByTitleContainingOrDescriptionContaining(String title, String description);
 }
