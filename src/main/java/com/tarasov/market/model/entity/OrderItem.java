@@ -1,32 +1,28 @@
 package com.tarasov.market.model.entity;
 
 
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 
-@Entity
 @Table(name = "order_items")
 @Data
 @NoArgsConstructor
 public class OrderItem {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "order_id", referencedColumnName = "id")
-    private Order order;
-
-    @ManyToOne
-    @JoinColumn(name = "offering_id", referencedColumnName = "id")
-    private Offering offering;
-
-    @Column
+    private Long orderId;
+    private Long offeringId;
     private int amount;
+    private BigDecimal unitPrice;
 
-    @Column(name = "unit_price")
-    private BigDecimal price;
+    public OrderItem(Long orderId, Long offeringId, int amount, BigDecimal unitPrice) {
+        this.orderId = orderId;
+        this.offeringId = offeringId;
+        this.amount = amount;
+        this.unitPrice = unitPrice;
+    }
 }

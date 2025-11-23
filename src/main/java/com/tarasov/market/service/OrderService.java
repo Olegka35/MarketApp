@@ -1,11 +1,12 @@
 package com.tarasov.market.service;
 
 import com.tarasov.market.model.dto.OrderDto;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
 
 public interface OrderService {
-    List<OrderDto> getOrders();
-    OrderDto getOrderById(Long id);
-    OrderDto createOrderFromCart();
+    Flux<OrderDto> getOrders();
+    Mono<OrderDto> getOrderById(Long id);
+    Mono<OrderDto> createOrderFromCart();
 }

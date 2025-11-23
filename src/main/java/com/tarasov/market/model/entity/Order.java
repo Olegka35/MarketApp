@@ -1,29 +1,26 @@
 package com.tarasov.market.model.entity;
 
 
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.ReadOnlyProperty;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
-@Entity
+
 @Table(name = "orders")
 @Data
 @NoArgsConstructor
 public class Order {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ReadOnlyProperty
     private Long id;
 
-    @Column(name = "created_date", nullable = false, updatable = false, insertable = false)
+    @ReadOnlyProperty
     private LocalDateTime createdDate;
-
-    @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
-
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<OrderItem> orderItems;
 }
