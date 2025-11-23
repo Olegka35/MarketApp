@@ -1,5 +1,6 @@
 package com.tarasov.market.repository;
 
+import com.tarasov.market.configuration.ResetDB;
 import com.tarasov.market.model.entity.CartItem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ public class CartRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void addCartItemTest() {
         Long offeringId = 1L;
         CartItem cartItem = new CartItem(offeringId, 1);
@@ -62,7 +63,7 @@ public class CartRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void deleteCartItemTest() {
         Long offeringId = 5L;
         CartItem item = cartRepository.findByOfferingId(offeringId).block();
@@ -75,7 +76,7 @@ public class CartRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void updateCartItemAmountTest() {
         Long offeringId = 5L;
         CartItem item = cartRepository.findByOfferingId(offeringId).block();

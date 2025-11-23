@@ -1,10 +1,10 @@
 package com.tarasov.market.repository;
 
+import com.tarasov.market.configuration.ResetDB;
 import com.tarasov.market.model.db.OrderWithItem;
 import com.tarasov.market.model.entity.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,7 +28,7 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void getOrderByIDTest() {
         List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(1L).collectList().block();
 
@@ -45,7 +45,7 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void createOrderTest() {
         Order order = new Order();
         order.setTotalPrice(BigDecimal.valueOf(200));

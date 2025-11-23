@@ -1,12 +1,11 @@
 package com.tarasov.market.repository;
 
+import com.tarasov.market.configuration.ResetDB;
 import com.tarasov.market.model.db.OfferingWithCartItem;
 import com.tarasov.market.model.db.PageRequest;
 import com.tarasov.market.model.entity.Offering;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -72,7 +71,7 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void addOfferingTest() {
         Offering offering = offeringRepository.save(
                 new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000))
@@ -85,13 +84,13 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void deleteCreatedOfferingTest() {
         Boolean existsAfterDelete =
                 offeringRepository.save(
                     new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000)))
-                        .doOnSuccess(offeringRepository::delete)
-                        .map(Offering::getId)
+                        .flatMap(offering -> offeringRepository.delete(offering)
+                                .thenReturn(offering.getId()))
                         .flatMap(id -> offeringRepository.existsById(id))
                         .block();
         assertNotNull(existsAfterDelete);
@@ -124,7 +123,7 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    //@Transactional
+    @ResetDB
     public void createOfferingTest() {
         Offering offeringRequest = new Offering("Кроссовки",
                 "Кроссовки New Balance",
