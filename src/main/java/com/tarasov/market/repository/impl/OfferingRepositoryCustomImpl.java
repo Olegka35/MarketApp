@@ -12,7 +12,6 @@ import reactor.core.publisher.Flux;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 
 @RequiredArgsConstructor
@@ -21,9 +20,9 @@ public class OfferingRepositoryCustomImpl implements OfferingRepositoryCustom {
     private final R2dbcEntityTemplate entityTemplate;
 
     @Override
-    public Flux<OfferingWithCartItem> findOfferings(PageRequest pageRequest, Optional<String> search) {
-        return fetchData(prepareSQLQuery(pageRequest, search.orElse(null)),
-                collectQueryParams(pageRequest, search.orElse(null)));
+    public Flux<OfferingWithCartItem> findOfferings(PageRequest pageRequest, String search) {
+        return fetchData(prepareSQLQuery(pageRequest, search),
+                collectQueryParams(pageRequest, search));
     }
 
     private Flux<OfferingWithCartItem> fetchData(String sqlQuery, Map<String, Object> params) {

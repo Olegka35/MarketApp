@@ -1,2 +1,6 @@
 offering:
   images-directory: ./offering_images_test
+
+logging:
+  level:
+    io.r2dbc.postgresql: DEBUG

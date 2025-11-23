@@ -4,8 +4,7 @@ import com.tarasov.market.model.db.OfferingWithCartItem;
 import com.tarasov.market.model.db.PageRequest;
 import reactor.core.publisher.Flux;
 
-import java.util.Optional;
 
 public interface OfferingRepositoryCustom {
-    Flux<OfferingWithCartItem> findOfferings(PageRequest pageRequest, Optional<String> search);
+    Flux<OfferingWithCartItem> findOfferings(PageRequest pageRequest, String search);
 }

@@ -40,18 +40,21 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public Mono<Void> addOneCartItem(Long offeringId) {
         return cartRepository.findByOfferingId(offeringId)
-                .switchIfEmpty(
-                        offeringRepository.findById(offeringId)
-                                .switchIfEmpty(Mono.error(new NoSuchElementException("Offering not found")))
-                                .flatMap(offering -> {
-                                    CartItem newCartItem = new CartItem(offeringId, 1);
-                                    return cartRepository.save(newCartItem);
-                                })
-                )
                 .flatMap(cartItem -> {
                     cartItem.setAmount(cartItem.getAmount() + 1);
-                    return cartRepository.save(cartItem).then();
-                });
+                    return cartRepository.save(cartItem);
+                })
+                .switchIfEmpty(
+                        offeringRepository.existsById(offeringId)
+                                .flatMap(exists -> {
+                                    if (exists) {
+                                        CartItem newCartItem = new CartItem(offeringId, 1);
+                                        return cartRepository.save(newCartItem);
+                                    } else {
+                                        return Mono.error(new NoSuchElementException("Offering not found"));
+                                    }
+                                })
+                ).then();
     }
 
     @Override

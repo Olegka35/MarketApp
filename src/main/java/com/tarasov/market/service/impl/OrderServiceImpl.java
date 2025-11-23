@@ -62,6 +62,14 @@ public class OrderServiceImpl implements OrderService {
                 .flatMap(order -> getOrderById(order.getId()));
     }
 
+    private Mono<Order> createAndSaveOrder(List<OfferingWithCartItem> cartItems) {
+        Order order = new Order();
+        BigDecimal totalPrice = calculateTotalPrice(cartItems);
+        order.setTotalPrice(totalPrice);
+        return orderRepository.save(order);
+    }
+
+
     private List<OrderItem> convertCartItemsToOrderItems(List<OfferingWithCartItem> cartItems, Order order) {
         return cartItems.stream()
                 .map(cartItem -> {
@@ -74,12 +82,6 @@ public class OrderServiceImpl implements OrderService {
                 }).toList();
     }
 
-    private Mono<Order> createAndSaveOrder(List<OfferingWithCartItem> cartItems) {
-        Order order = new Order();
-        BigDecimal totalPrice = calculateTotalPrice(cartItems);
-        order.setTotalPrice(totalPrice);
-        return orderRepository.save(order);
-    }
 
     private BigDecimal calculateTotalPrice(List<OfferingWithCartItem> cartItems) {
         return cartItems.stream()

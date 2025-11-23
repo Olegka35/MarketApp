@@ -45,7 +45,7 @@ public class OfferingServiceImpl implements OfferingService {
         Mono<Integer> offeringAmount = StringUtils.isEmpty(search)
                 ? offeringRepository.count().map(Long::intValue)
                 : offeringRepository.countByTitleContainingOrDescriptionContaining(search, search);
-        return Mono.zip(offeringRepository.findOfferings(pageRequest, Optional.ofNullable(search))
+        return Mono.zip(offeringRepository.findOfferings(pageRequest, search)
                                 .map(OfferingDto::from).collectList(),
                         offeringAmount)
                 .map(tuple ->
