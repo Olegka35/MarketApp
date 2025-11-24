@@ -1,10 +1,11 @@
 package com.tarasov.market.service;
 
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.codec.multipart.FilePart;
+import reactor.core.publisher.Mono;
 
 
 public interface ImageService {
 
-    void uploadImage(MultipartFile image);
+    Mono<Void> uploadImage(FilePart image);
 
 }

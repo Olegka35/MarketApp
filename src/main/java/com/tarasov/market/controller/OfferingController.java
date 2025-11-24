@@ -8,12 +8,9 @@ import com.tarasov.market.service.OfferingService;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 
@@ -64,13 +61,14 @@ public class OfferingController {
     }
 
     @PostMapping("/items/new")
-    public Mono<Rendering> createNewOffering(@RequestParam @NotBlank String title,
-                                    @RequestParam @NotBlank String description,
-                                    @RequestParam MultipartFile image,
-                                    @RequestParam @Positive BigDecimal price) {
-        return offeringService.createOffering(title, description, price, image)
+    public Mono<Rendering> createNewOffering(@RequestPart @NotBlank String title,
+                                             @RequestPart @NotBlank String description,
+                                             @RequestPart @Positive String price,
+                                             @RequestPart Mono<FilePart> image) {
+        System.out.println("Creating New Offering");
+        return image.flatMap(filePart -> offeringService.createOffering(title, description, new BigDecimal(price), filePart)
                 .map(newOfferingId ->
-                        Rendering.redirectTo(String.format("/items/%d", newOfferingId)).build());
+                        Rendering.redirectTo(String.format("/items/%d", newOfferingId)).build()));
     }
 
     private List<? extends List<OfferingDto>> groupOfferings(List<OfferingDto> offerings, int rowSize) {

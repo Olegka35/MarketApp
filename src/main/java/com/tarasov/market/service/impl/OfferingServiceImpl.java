@@ -12,14 +12,13 @@ import com.tarasov.market.service.OfferingService;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 
 @Service
@@ -54,10 +53,10 @@ public class OfferingServiceImpl implements OfferingService {
 
     @Override
     @Transactional
-    public Mono<Long> createOffering(String title, String description, BigDecimal price, MultipartFile image) {
-        Offering offering = new Offering(title, description, image.getOriginalFilename(), price);
+    public Mono<Long> createOffering(String title, String description, BigDecimal price, FilePart image) {
+        Offering offering = new Offering(title, description, image.filename(), price);
         return offeringRepository.save(offering)
-                .doOnSuccess(createdOffering -> imageService.uploadImage(image))
+                .flatMap(createdOffering -> imageService.uploadImage(image).thenReturn(createdOffering))
                 .flatMap(createdOffering -> Mono.just(createdOffering.getId()));
     }
 
