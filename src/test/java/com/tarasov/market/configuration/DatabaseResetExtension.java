@@ -39,7 +39,7 @@ public class DatabaseResetExtension implements InvocationInterceptor {
     private void resetDB(DatabaseClient databaseClient) throws IOException {
         Path resetDbScriptPath = Path.of("src/test/resources/reset_db.sql");
         Path dataScriptPath = Path.of("src/test/resources/data.sql");
-        if (!Files.exists(resetDbScriptPath) ||  !Files.exists(dataScriptPath)) {
+        if (!Files.exists(resetDbScriptPath) || !Files.exists(dataScriptPath)) {
             throw new NoSuchFileException("Reset DB scripts not found");
         }
         executeScript(databaseClient, resetDbScriptPath);

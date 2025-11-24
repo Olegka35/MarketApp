@@ -90,4 +90,17 @@ public class CartRepositoryTest extends BaseRepositoryTest {
         assertNotNull(item);
         assertEquals(2, item.getAmount());
     }
+
+    @Test
+    @ResetDB
+    public void deleteByOfferingIdTest() {
+        Long offeringId = 5L;
+        CartItem item = cartRepository.findByOfferingId(offeringId).block();
+        assertNotNull(item);
+
+        cartRepository.deleteByOfferingId(offeringId).block();
+
+        item = cartRepository.findByOfferingId(offeringId).block();
+        assertNull(item);
+    }
 }
