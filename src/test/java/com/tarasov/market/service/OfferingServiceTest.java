@@ -13,8 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
@@ -146,11 +148,9 @@ public class OfferingServiceTest {
 
     @Test
     public void createOfferingTest() {
-        MockMultipartFile mockImage = new MockMultipartFile("image",
-                "NewBalance.png",
-                MediaType.IMAGE_PNG_VALUE,
-                "Test image content".getBytes()
-        );
+        FilePart mockImage = Mockito.mock(FilePart.class);
+        when(mockImage.filename()).thenReturn("NewBalance.png");
+        when(imageService.uploadImage(mockImage)).thenReturn(Mono.empty());
         when(offeringRepository.save(any(Offering.class)))
                 .thenAnswer(i -> {
                     Offering createdOffering = i.getArgument(0);
