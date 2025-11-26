@@ -27,24 +27,24 @@ public class OfferingController {
 
     private final OfferingService offeringService;
 
-    @GetMapping({ "/", "/items" })
+    @GetMapping({"/", "/items"})
     public Mono<Rendering> loadMainOfferingsPage(@RequestParam(defaultValue = "") String search,
                                                  @RequestParam(defaultValue = "NO") SortType sort,
                                                  @RequestParam(defaultValue = "1") @Positive int pageNumber,
                                                  @RequestParam(defaultValue = "5") @Positive int pageSize) {
         return offeringService.getOfferings(search, sort, pageNumber, pageSize)
-            .map(page ->
-                Rendering.view("items")
-                        .modelAttribute("items", groupOfferings(page.getOfferings(), 3))
-                        .modelAttribute("paging", new PageInfo(
-                                pageSize,
-                                pageNumber,
-                                pageNumber > 1,
-                                pageNumber < page.getTotalPages()
-                        ))
-                        .modelAttribute("search", search)
-                        .modelAttribute("sort", sort.name())
-                        .build());
+                .map(page ->
+                        Rendering.view("items")
+                                .modelAttribute("items", groupOfferings(page.getOfferings(), 3))
+                                .modelAttribute("paging", new PageInfo(
+                                        pageSize,
+                                        pageNumber,
+                                        pageNumber > 1,
+                                        pageNumber < page.getTotalPages()
+                                ))
+                                .modelAttribute("search", search)
+                                .modelAttribute("sort", sort.name())
+                                .build());
     }
 
     @GetMapping("/items/{id}")
