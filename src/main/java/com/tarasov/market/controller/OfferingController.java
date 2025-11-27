@@ -65,7 +65,6 @@ public class OfferingController {
                                              @RequestPart @NotBlank String description,
                                              @RequestPart @Positive String price,
                                              @RequestPart Mono<FilePart> image) {
-        System.out.println("Creating New Offering");
         return image.flatMap(filePart -> offeringService.createOffering(title, description, new BigDecimal(price), filePart)
                 .map(newOfferingId ->
                         Rendering.redirectTo(String.format("/items/%d", newOfferingId)).build()));

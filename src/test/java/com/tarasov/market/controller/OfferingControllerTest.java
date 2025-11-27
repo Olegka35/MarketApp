@@ -1,93 +1,101 @@
 package com.tarasov.market.controller;
 
 
-import com.tarasov.market.model.dto.OfferingDto;
-import com.tarasov.market.model.dto.PageInfo;
+import com.tarasov.market.configuration.ResetDB;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.web.reactive.function.BodyInserters;
 
-import java.math.BigDecimal;
-import java.util.List;
-
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void searchOfferingsTest() throws Exception {
-        mockMvc.perform(get("/items"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("items"))
-                .andExpect(model().attributeExists("items", "paging", "sort", "search"))
-                .andExpect(model().attribute("items", hasSize(2)))
-                .andExpect(result -> {
-                    List<List<OfferingDto>> items = (List<List<OfferingDto>>) result.getModelAndView().getModel().get("items");
-                    assertEquals(3, items.get(0).size());
-                    assertEquals(3, items.get(1).size());
-                    assertEquals(-1, items.get(1).get(2).id());
-
-                    PageInfo page = (PageInfo) result.getModelAndView().getModel().get("paging");
-                    assertEquals(1, page.pageNumber());
-                    assertEquals(5, page.pageSize());
-                    assertFalse(page.hasPrevious());
-                    assertFalse(page.hasNext());
-                })
-                .andExpect(model().attribute("sort", "NO"));
+        webTestClient.get().uri("/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Термокружка"));
+                    assertTrue(html.contains("Зонт складной"));
+                    assertTrue(html.contains("Настольная лампа"));
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("Рюкзак городской"));
+                    assertTrue(html.contains("Страница: 1"));
+                    assertFalse(html.contains("&larr;</button>"));
+                    assertFalse(html.contains("&rarr;</button>"));
+                });
     }
 
     @Test
     public void searchOfferingsWithFilterTest() throws Exception {
-        mockMvc.perform(get("/items")
-                        .param("search", " и "))
-                .andExpect(status().isOk())
-                .andExpect(view().name("items"))
-                .andExpect(model().attributeExists("items", "paging", "sort", "search"))
-                .andExpect(model().attribute("items", hasSize(1)))
-                .andExpect(model().attribute("sort", "NO"))
-                .andExpect(result -> {
-                    PageInfo page = (PageInfo) result.getModelAndView().getModel().get("paging");
-                    assertEquals(1, page.pageNumber());
-                    assertEquals(5, page.pageSize());
-                    assertFalse(page.hasPrevious());
-                    assertFalse(page.hasNext());
+        webTestClient.get().uri("/items?search=+и+")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Настольная лампа"));
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("Страница: 1"));
+
+                    assertFalse(html.contains("Термокружка"));
+                    assertFalse(html.contains("Зонт складной"));
+                    assertFalse(html.contains("Рюкзак городской"));
+                    assertFalse(html.contains("&larr;</button>"));
+                    assertFalse(html.contains("&rarr;</button>"));
                 });
     }
 
     @Test
     public void searchOfferingsWithSortingAndPaginationTest() throws Exception {
-        mockMvc.perform(get("/items")
-                        .param("sort", "PRICE")
-                        .param("pageNumber", "1")
-                        .param("pageSize", "3"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("items"))
-                .andExpect(model().attributeExists("items", "paging", "sort", "search"))
-                .andExpect(model().attribute("items", hasSize(1)))
-                .andExpect(model().attribute("sort", "PRICE"))
-                .andExpect(result -> {
-                    PageInfo page = (PageInfo) result.getModelAndView().getModel().get("paging");
-                    assertEquals(1, page.pageNumber());
-                    assertEquals(3, page.pageSize());
-                    assertFalse(page.hasPrevious());
-                    assertTrue(page.hasNext());
+        webTestClient.get().uri("/items?sort=PRICE&pageNumber=1&pageSize=3")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Страница: 1"));
+                    assertFalse(html.contains("&larr;</button>"));
+                    assertTrue(html.contains("&rarr;</button>"));
+                    assertTrue(html.indexOf("990 руб.") < html.indexOf("1190 руб."));
+                    assertTrue(html.indexOf("1190 руб.") < html.indexOf("1290 руб."));
+                });
+    }
+
+    @Test
+    public void searchOfferingsWithSortingAndPaginationTest_2page() throws Exception {
+        webTestClient.get().uri("/items?sort=PRICE&pageNumber=2&pageSize=3")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Страница: 2"));
+                    assertTrue(html.contains("&larr;</button>"));
+                    assertFalse(html.contains("&rarr;</button>"));
+                    assertTrue(html.indexOf("1590 руб.") < html.indexOf("2790 руб."));
                 });
     }
 
     @Test
     public void searchOfferingsTest_noResults() throws Exception {
-        mockMvc.perform(get("/items")
-                        .param("search", "INCORRECT_SEARCH"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("items"))
-                .andExpect(model().attributeExists("items", "paging", "sort", "search"))
-                .andExpect(model().attribute("items", hasSize(0)));
+        webTestClient.get().uri("/items?search=INCORRECT_SEARCH")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                   assertNotNull(html);
+                    assertTrue(html.contains("Страница: 1"));
+                    assertFalse(html.contains("&larr;</button>"));
+                    assertFalse(html.contains("&rarr;</button>"));
+                    assertFalse(html.contains("card"));
+                });
     }
 
     @ParameterizedTest
@@ -99,64 +107,68 @@ public class OfferingControllerTest extends BaseControllerTest {
             "TEXT, 1, 5"
     })
     public void searchOfferingsTest_incorrectParams(String sort, String pageNumber, String pageSize) throws Exception {
-        mockMvc.perform(get("/items")
-                        .param("sort", sort)
-                        .param("pageNumber", pageNumber)
-                        .param("pageSize", pageSize))
-                .andExpect(status().isBadRequest());
+        webTestClient.get()
+                .uri(String.format("/items?sort=%s&pageNumber=%s&pageSize=%s", sort, pageNumber, pageSize))
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @Test
     public void getOfferingByIdTest_addedToCart() throws Exception {
-        mockMvc.perform(get("/items/2"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("item"))
-                .andExpect(result -> {
-                    OfferingDto offeringDto = (OfferingDto) result.getModelAndView().getModel().get("item");
-                    assertEquals(2L, offeringDto.id());
-                    assertEquals("Беспроводная мышь", offeringDto.title());
-                    assertEquals("Эргономичная мышь с Bluetooth-подключением и регулируемым DPI", offeringDto.description());
-                    assertEquals("/wireless_mouse.jpg", offeringDto.imgPath());
-                    assertEquals(BigDecimal.valueOf(990), offeringDto.price());
-                    assertEquals(2, offeringDto.count());
+        webTestClient.get().uri("/items/2")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("Эргономичная мышь с Bluetooth-подключением и регулируемым DPI"));
+                    assertTrue(html.contains("/wireless_mouse.jpg"));
+                    assertTrue(html.contains("990 руб."));
+                    assertTrue(html.contains("<span>2</span>"));
+                    assertFalse(html.contains("button type=\"submit\" class=\"btn btn-warning ms-auto bi bi-cart4\" name=\"action\" value=\"PLUS\""));
                 });
     }
 
     @Test
     public void getOfferingByIdTest_notInCart() throws Exception {
-        mockMvc.perform(get("/items/3"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("item"))
-                .andExpect(result -> {
-                    OfferingDto offeringDto = (OfferingDto) result.getModelAndView().getModel().get("item");
-                    assertEquals(3L, offeringDto.id());
-                    assertEquals("Рюкзак городской", offeringDto.title());
-                    assertEquals("Лёгкий водоотталкивающий рюкзак с отделением для ноутбука 15.6\"", offeringDto.description());
-                    assertEquals("/backpack.jpg", offeringDto.imgPath());
-                    assertEquals(BigDecimal.valueOf(2790), offeringDto.price());
-                    assertEquals(0, offeringDto.count());
+        webTestClient.get().uri("/items/3")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Рюкзак городской"));
+                    assertTrue(html.contains("Лёгкий водоотталкивающий рюкзак с отделением для ноутбука 15.6"));
+                    assertTrue(html.contains("/backpack.jpg"));
+                    assertTrue(html.contains("2790 руб."));
+                    assertTrue(html.contains("<span>0</span>"));
+                    assertTrue(html.contains("button type=\"submit\" class=\"btn btn-warning ms-auto bi bi-cart4\" name=\"action\" value=\"PLUS\""));
                 });
     }
 
     @Test
     public void getOfferingByIdTest_nonExistingOffering() throws Exception {
-        mockMvc.perform(get("/items/300"))
-                .andExpect(status().isNotFound());
+        webTestClient.get().uri("/items/300")
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void createNewOfferingTest() throws Exception {
-        MockMultipartFile image = new MockMultipartFile("image",
-                "NewBalance.png",
-                MediaType.IMAGE_PNG_VALUE,
-                "Test image content".getBytes()
-        );
-        mockMvc.perform(multipart("/items/new")
-                        .file(image)
-                        .param("title", "test")
-                        .param("description", "test description")
-                        .param("price", "1000"))
-                .andExpect(status().is3xxRedirection());
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("title", "test");
+        builder.part("description", "test description");
+        builder.part("price", "1000");
+        builder.part("image", "Test image content".getBytes())
+                .header("Content-Disposition", "form-data; name=image; filename=NewBalance.jpg");
+
+        webTestClient.post()
+                .uri("/items/new")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(builder.build()))
+                .exchange()
+                .expectStatus().is3xxRedirection();
     }
 }

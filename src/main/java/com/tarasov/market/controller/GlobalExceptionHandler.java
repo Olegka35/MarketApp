@@ -22,11 +22,4 @@ public class GlobalExceptionHandler {
         LOGGER.error("Not Found Exception", e);
         return Mono.just("error");
     }
-
-    @ExceptionHandler( { Exception.class })
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Mono<String> handleInternalErrorException(Exception e) {
-        LOGGER.error("Internal Server Error", e);
-        return Mono.just("error");
-    }
 }
