@@ -1,158 +1,179 @@
 package com.tarasov.market.controller;
 
-import com.tarasov.market.model.dto.CartItemDto;
-import com.tarasov.market.model.dto.OfferingDto;
-import org.junit.jupiter.api.Test;
+import com.tarasov.market.configuration.ResetDB;
+import com.tarasov.market.repository.CartRepository;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.math.BigDecimal;
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class CartControllerTest extends BaseControllerTest {
+
+class CartControllerTest extends BaseControllerTest {
+
+    @Autowired
+    CartRepository cartRepository;
+
+    @BeforeEach
+    void setUp() {
+        cartRepository.findAllWithOffering().collectList().subscribe(System.out::println);
+    }
 
     @Test
-    public void getCartItemsTest() throws Exception {
-        mockMvc.perform(get("/cart/items"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart"))
-                .andExpect(result -> {
-                    BigDecimal totalPrice = (BigDecimal) result.getModelAndView().getModel().get("total");
-                    assertEquals(BigDecimal.valueOf(3170), totalPrice);
-
-                    List<CartItemDto> cartItems = (List<CartItemDto>) result.getModelAndView().getModel().get("items");
-                    assertEquals(2, cartItems.size());
-
-                    CartItemDto mouseItem = cartItems.stream()
-                            .filter(item -> item.id() == 2L)
-                            .findFirst().orElseThrow();
-                    assertEquals(2, mouseItem.count());
-                    assertEquals(BigDecimal.valueOf(990), mouseItem.price());
-                    assertEquals("Беспроводная мышь", mouseItem.title());
-                    assertEquals("/wireless_mouse.jpg", mouseItem.imgPath());
-
-                    CartItemDto umbrellaItem = cartItems.stream()
-                            .filter(item -> item.id() == 5L)
-                            .findFirst().orElseThrow();
-                    assertEquals(1, umbrellaItem.count());
-                    assertEquals(BigDecimal.valueOf(1190), umbrellaItem.price());
-                    assertEquals("Зонт складной", umbrellaItem.title());
-                    assertEquals("/umbrella.jpg", umbrellaItem.imgPath());
+    public void getCartItemsTest() {
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("/wireless_mouse.jpg"));
+                    assertTrue(html.contains("3170 руб."));
+                    assertTrue(html.contains("Зонт складной"));
+                    assertTrue(html.contains("/umbrella.jpg"));
+                    assertTrue(html.contains("990 руб."));
                 });
     }
 
     @Test
-    @Transactional
-    public void addCartItemFromCartPageTest() throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", "1")
-                        .param("action", "PLUS"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart"))
-                .andExpect(result -> {
-                    BigDecimal totalPrice = (BigDecimal) result.getModelAndView().getModel().get("total");
-                    assertEquals(BigDecimal.valueOf(4460), totalPrice);
+    @ResetDB
+    public void addCartItemFromCartPageTest() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", "1")
+                        .queryParam("action", "PLUS")
+                        .build()
+                )
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location", "/cart/items");
 
-                    List<CartItemDto> cartItems = (List<CartItemDto>) result.getModelAndView().getModel().get("items");
-                    assertEquals(3, cartItems.size());
-
-                    CartItemDto newItem = cartItems.stream()
-                            .filter(item -> item.id() == 1L)
-                            .findFirst().orElseThrow();
-                    assertEquals(1, newItem.count());
-                    assertEquals(BigDecimal.valueOf(1290), newItem.price());
-                    assertEquals("Термокружка 500 мл", newItem.title());
-                    assertEquals("/thermocup.jpg", newItem.imgPath());
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Термокружка 500 мл"));
+                    assertTrue(html.contains("/thermocup.jpg"));
+                    assertTrue(html.contains("1290 руб."));
+                    assertTrue(html.contains("<span>1</span>"));
+                    assertTrue(html.contains("Итого: 4460 руб."));
                 });
     }
 
     @Test
-    @Transactional
-    public void removeCartItemFromCartPageTest() throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", "2")
-                        .param("action", "MINUS"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart"))
-                .andExpect(result -> {
-                    BigDecimal totalPrice = (BigDecimal) result.getModelAndView().getModel().get("total");
-                    assertEquals(BigDecimal.valueOf(2180), totalPrice);
+    @ResetDB
+    public void removeCartItemFromCartPageTest() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", "2")
+                        .queryParam("action", "MINUS")
+                        .build()
+                )
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location", "/cart/items");
 
-                    List<CartItemDto> cartItems = (List<CartItemDto>) result.getModelAndView().getModel().get("items");
-                    assertEquals(2, cartItems.size());
-
-                    CartItemDto cartItem = cartItems.stream()
-                            .filter(item -> item.id() == 2L)
-                            .findFirst().orElseThrow();
-                    assertEquals(1, cartItem.count());
-                    assertEquals(BigDecimal.valueOf(990), cartItem.price());
-                    assertEquals("Беспроводная мышь", cartItem.title());
-                    assertEquals("/wireless_mouse.jpg", cartItem.imgPath());
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("/wireless_mouse.jpg"));
+                    assertTrue(html.contains("990 руб."));
+                    assertTrue(html.contains("<span>1</span>"));
+                    assertTrue(html.contains("Итого: 2180 руб."));
                 });
     }
 
     @Test
-    @Transactional
-    public void removeCartItemToZeroFromCartPageTest() throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", "5")
-                        .param("action", "MINUS"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart"))
-                .andExpect(result -> {
-                    BigDecimal totalPrice = (BigDecimal) result.getModelAndView().getModel().get("total");
-                    assertEquals(BigDecimal.valueOf(1980), totalPrice);
+    @ResetDB
+    public void removeCartItemToZeroFromCartPageTest() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", "5")
+                        .queryParam("action", "MINUS")
+                        .build()
+                )
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location", "/cart/items");
 
-                    List<CartItemDto> cartItems = (List<CartItemDto>) result.getModelAndView().getModel().get("items");
-                    assertEquals(1, cartItems.size());
-
-                    assertTrue(cartItems.stream().noneMatch(item -> item.id() == 5));
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertFalse(html.contains("Зонт складной"));
+                    assertTrue(html.contains("Итого: 1980 руб."));
+                    assertTrue(html.contains("Беспроводная мышь"));
                 });
     }
 
     @Test
-    @Transactional
-    public void deleteCartItemFromCartPageTest() throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", "2")
-                        .param("action", "DELETE"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("cart"))
-                .andExpect(result -> {
-                    BigDecimal totalPrice = (BigDecimal) result.getModelAndView().getModel().get("total");
-                    assertEquals(BigDecimal.valueOf(1190), totalPrice);
+    @ResetDB
+    public void deleteCartItemFromCartPageTest() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", "2")
+                        .queryParam("action", "DELETE")
+                        .build()
+                )
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location", "/cart/items");
 
-                    List<CartItemDto> cartItems = (List<CartItemDto>) result.getModelAndView().getModel().get("items");
-                    assertEquals(1, cartItems.size());
-
-                    assertTrue(cartItems.stream().noneMatch(item -> item.id() == 2));
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertFalse(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("Итого: 1190 руб."));
+                    assertTrue(html.contains("Зонт складной"));
                 });
     }
 
     @Test
-    @Transactional
-    public void deleteCartItemFromCartPageTest_notExistInCart() throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", "1")
-                        .param("action", "DELETE"))
-                .andExpect(status().isNotFound());
+    @ResetDB
+    public void deleteCartItemFromCartPageTest_notExistInCart() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", "1")
+                        .queryParam("action", "DELETE")
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
-    @Transactional
-    public void addCartItemFromCartPageTest_incorrectOfferingId() throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", "200")
-                        .param("action", "PLUS"))
-                .andExpect(status().isNotFound());
+    @ResetDB
+    public void addCartItemFromCartPageTest_incorrectOfferingId() {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", "200")
+                        .queryParam("action", "PLUS")
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @ParameterizedTest
@@ -163,13 +184,17 @@ public class CartControllerTest extends BaseControllerTest {
             "5, ADD",
             "5, REMOVE"
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromCartPageTest_badRequest(String id,
-                                                          String action) throws Exception {
-        mockMvc.perform(post("/cart/items")
-                        .param("id", id)
-                        .param("action", action))
-                .andExpect(status().isBadRequest());
+                                                          String action) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/cart/items")
+                        .queryParam("id", id)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @ParameterizedTest
@@ -180,28 +205,31 @@ public class CartControllerTest extends BaseControllerTest {
             "5, Зонт, PRICE, 1, 5, PLUS",
             "5, , , , , DELETE"
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromMainPageTest(String id,
                                                String search,
                                                String sort,
                                                String pageNumber,
                                                String pageSize,
-                                               String action) throws Exception {
-        mockMvc.perform(post("/items")
-                        .param("id", id)
-                        .param("search", search)
-                        .param("sort", sort)
-                        .param("pageNumber", pageNumber)
-                        .param("pageSize", pageSize)
-                        .param("action", action))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl(
+                                               String action) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/items")
+                        .queryParam("id", id)
+                        .queryParam("search", search)
+                        .queryParam("sort", sort)
+                        .queryParam("pageNumber", pageNumber)
+                        .queryParam("pageSize", pageSize)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().is3xxRedirection()
+                .expectHeader().valueEquals("Location",
                         String.format("/items?search=%s&sort=%s&pageNumber=%d&pageSize=%d",
-                                Optional.ofNullable(search).orElse(""),
+                                URLEncoder.encode(Optional.ofNullable(search).orElse(""), Charset.defaultCharset()),
                                 Optional.ofNullable(sort).orElse("NO"),
                                 Integer.valueOf(Optional.ofNullable(pageNumber).orElse("1")),
                                 Integer.valueOf(Optional.ofNullable(pageSize).orElse("5")))
-                        )
                 );
     }
 
@@ -213,21 +241,25 @@ public class CartControllerTest extends BaseControllerTest {
             "5, Зонт, PRICE, 1, 5, ADD",
             "5, , , 0, , DELETE"
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromMainPageTest_badRequest(String id,
-                                               String search,
-                                               String sort,
-                                               String pageNumber,
-                                               String pageSize,
-                                               String action) throws Exception {
-        mockMvc.perform(post("/items")
-                        .param("id", id)
-                        .param("search", search)
-                        .param("sort", sort)
-                        .param("pageNumber", pageNumber)
-                        .param("pageSize", pageSize)
-                        .param("action", action))
-                .andExpect(status().isBadRequest());
+                                                          String search,
+                                                          String sort,
+                                                          String pageNumber,
+                                                          String pageSize,
+                                                          String action) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/items")
+                        .queryParam("id", id)
+                        .queryParam("search", search)
+                        .queryParam("sort", sort)
+                        .queryParam("pageNumber", pageNumber)
+                        .queryParam("pageSize", pageSize)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @ParameterizedTest
@@ -236,21 +268,25 @@ public class CartControllerTest extends BaseControllerTest {
             "4, , , 2, 3, MINUS",
             "1, , , , , DELETE"
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromMainPageTest_notFound(String id,
                                                           String search,
                                                           String sort,
                                                           String pageNumber,
                                                           String pageSize,
-                                                          String action) throws Exception {
-        mockMvc.perform(post("/items")
-                        .param("id", id)
-                        .param("search", search)
-                        .param("sort", sort)
-                        .param("pageNumber", pageNumber)
-                        .param("pageSize", pageSize)
-                        .param("action", action))
-                .andExpect(status().isNotFound());
+                                                          String action) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/items")
+                        .queryParam("id", id)
+                        .queryParam("search", search)
+                        .queryParam("sort", sort)
+                        .queryParam("pageNumber", pageNumber)
+                        .queryParam("pageSize", pageSize)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @ParameterizedTest
@@ -261,24 +297,32 @@ public class CartControllerTest extends BaseControllerTest {
             "2, DELETE, 0, 990, Беспроводная мышь, /wireless_mouse.jpg",
             "5, DELETE, 0, 1190, Зонт складной, /umbrella.jpg",
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromOfferingPageTest(String id,
                                                    String action,
                                                    String newCount,
                                                    String price,
                                                    String title,
-                                                   String imgPath) throws Exception {
-        mockMvc.perform(post("/items/" + id)
-                        .param("action", action))
-                .andExpect(status().isOk())
-                .andExpect(view().name("item"))
-                .andExpect(result -> {
-                    OfferingDto offering = (OfferingDto) result.getModelAndView().getModel().get("item");
-                    assertEquals(Long.valueOf(id), offering.id());
-                    assertEquals(Integer.valueOf(newCount), offering.count());
-                    assertEquals(new BigDecimal(price), offering.price());
-                    assertEquals(title, offering.title());
-                    assertEquals(imgPath, offering.imgPath());
+                                                   String imgPath) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/items/" + id)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().is3xxRedirection();
+
+        webTestClient.get()
+                .uri("/items/" + id)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains(title));
+                    assertTrue(html.contains(imgPath));
+                    assertTrue(html.contains(price));
+                    assertTrue(html.contains("<span>" + newCount + "</span>"));
                 });
     }
 
@@ -289,12 +333,16 @@ public class CartControllerTest extends BaseControllerTest {
             "-1, MINUS",
             "2, REMOVE"
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromOfferingPageTest_badRequest(String id,
-                                                              String action) throws Exception {
-        mockMvc.perform(post("/items/" + id)
-                        .param("action", action))
-                .andExpect(status().isBadRequest());
+                                                              String action) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/items/" + id)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     @ParameterizedTest
@@ -303,11 +351,15 @@ public class CartControllerTest extends BaseControllerTest {
             "1, DELETE",
             "1, MINUS"
     })
-    @Transactional
+    @ResetDB
     public void updateCartItemFromOfferingPageTest_notFound(String id,
-                                                              String action) throws Exception {
-        mockMvc.perform(post("/items/" + id)
-                        .param("action", action))
-                .andExpect(status().isNotFound());
+                                                              String action) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder.path("/items/" + id)
+                        .queryParam("action", action)
+                        .build()
+                )
+                .exchange()
+                .expectStatus().isNotFound();
     }
 }

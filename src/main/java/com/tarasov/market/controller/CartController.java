@@ -28,7 +28,7 @@ public class CartController {
     }
 
     @PostMapping("/cart/items")
-    public Mono<Rendering> updateCartFromCartPage(@ModelAttribute CartUpdateRequest request) {
+    public Mono<Rendering> updateCartFromCartPage(@Valid @ModelAttribute CartUpdateRequest request) {
         return updateCart(request.id(), request.action())
                 .then(
                         Mono.just(Rendering.redirectTo("/cart/items").build())
@@ -47,7 +47,7 @@ public class CartController {
 
     @PostMapping("/items/{id}")
     public Mono<Rendering> updateCartFromOfferingPage(@PathVariable @Positive long id,
-                                                      @ModelAttribute CartUpdateRequest request) {
+                                                      @Valid @ModelAttribute CartUpdateRequest request) {
         return updateCart(id, request.action())
                 .then(
                         Mono.just(Rendering.redirectTo(String.format("/items/%d", id)).build())

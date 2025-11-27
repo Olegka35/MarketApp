@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
-    public void searchOfferingsTest() throws Exception {
+    public void searchOfferingsTest() {
         webTestClient.get().uri("/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -33,7 +33,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void searchOfferingsWithFilterTest() throws Exception {
+    public void searchOfferingsWithFilterTest() {
         webTestClient.get().uri("/items?search=+и+")
                 .exchange()
                 .expectStatus().isOk()
@@ -53,7 +53,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void searchOfferingsWithSortingAndPaginationTest() throws Exception {
+    public void searchOfferingsWithSortingAndPaginationTest() {
         webTestClient.get().uri("/items?sort=PRICE&pageNumber=1&pageSize=3")
                 .exchange()
                 .expectStatus().isOk()
@@ -69,7 +69,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void searchOfferingsWithSortingAndPaginationTest_2page() throws Exception {
+    public void searchOfferingsWithSortingAndPaginationTest_2page() {
         webTestClient.get().uri("/items?sort=PRICE&pageNumber=2&pageSize=3")
                 .exchange()
                 .expectStatus().isOk()
@@ -84,7 +84,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void searchOfferingsTest_noResults() throws Exception {
+    public void searchOfferingsTest_noResults() {
         webTestClient.get().uri("/items?search=INCORRECT_SEARCH")
                 .exchange()
                 .expectStatus().isOk()
@@ -106,7 +106,7 @@ public class OfferingControllerTest extends BaseControllerTest {
             "ALPHA, 1, -1",
             "TEXT, 1, 5"
     })
-    public void searchOfferingsTest_incorrectParams(String sort, String pageNumber, String pageSize) throws Exception {
+    public void searchOfferingsTest_incorrectParams(String sort, String pageNumber, String pageSize) {
         webTestClient.get()
                 .uri(String.format("/items?sort=%s&pageNumber=%s&pageSize=%s", sort, pageNumber, pageSize))
                 .exchange()
@@ -114,7 +114,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void getOfferingByIdTest_addedToCart() throws Exception {
+    public void getOfferingByIdTest_addedToCart() {
         webTestClient.get().uri("/items/2")
                 .exchange()
                 .expectStatus().isOk()
@@ -131,7 +131,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void getOfferingByIdTest_notInCart() throws Exception {
+    public void getOfferingByIdTest_notInCart() {
         webTestClient.get().uri("/items/3")
                 .exchange()
                 .expectStatus().isOk()
@@ -148,7 +148,7 @@ public class OfferingControllerTest extends BaseControllerTest {
     }
 
     @Test
-    public void getOfferingByIdTest_nonExistingOffering() throws Exception {
+    public void getOfferingByIdTest_nonExistingOffering() {
         webTestClient.get().uri("/items/300")
                 .exchange()
                 .expectStatus().isNotFound();
@@ -156,7 +156,7 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     @ResetDB
-    public void createNewOfferingTest() throws Exception {
+    public void createNewOfferingTest() {
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("title", "test");
         builder.part("description", "test description");

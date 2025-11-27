@@ -1,6 +1,7 @@
 package com.tarasov.market.configuration;
 
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
@@ -22,6 +23,17 @@ public class DatabaseResetExtension implements InvocationInterceptor {
     public void interceptTestMethod(Invocation<Void> invocation,
                                     ReflectiveInvocationContext<Method> invocationContext,
                                     ExtensionContext extensionContext) throws Throwable {
+        processTestMethod(invocation, invocationContext, extensionContext);
+    }
+
+    @Override
+    public void interceptTestTemplateMethod(Invocation<@Nullable Void> invocation, ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
+        processTestMethod(invocation, invocationContext, extensionContext);
+    }
+
+    private void processTestMethod(Invocation<Void> invocation,
+                                   ReflectiveInvocationContext<Method> invocationContext,
+                                   ExtensionContext extensionContext) throws Throwable {
         Method testMethod = invocationContext.getExecutable();
         if (!testMethod.isAnnotationPresent(ResetDB.class)) {
             invocation.proceed();
