@@ -15,7 +15,7 @@ Market application to buy items.
 2. Specify environment variables for your DB connection:
 
 ```
-DB_URL={your DB url} (example: jdbc:postgresql://localhost:5432/market_db)
+DB_URL={your DB url} (example: r2dbc:postgresql://localhost:5432/market_db)
 DB_USERNAME={DB username}
 DB_PASSWORD={DB password}
 IMAGE_DIRECTORY={path to directory with offering images}
