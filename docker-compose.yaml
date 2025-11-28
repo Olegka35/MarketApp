@@ -4,10 +4,12 @@ services:
   app:
     build: .
     container_name: market-app
+    volumes:
+      - ./offering_images:/app/images
     ports:
       - "8080:8080"
     environment:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_URL=${DB_URL}
-      - IMAGE_DIRECTORY=${IMAGE_DIRECTORY}
+      - IMAGE_DIRECTORY=/app/images

@@ -12,7 +12,7 @@ spring:
       validation-query: SELECT 1
   web:
     resources:
-      static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/, file:${offering.images-directory}
+      static-locations: classpath:/META-INF/resources/, classpath:/resources/, classpath:/static/, classpath:/public/, file:${IMAGE_DIRECTORY}
 
 offering:
   images-directory: ${IMAGE_DIRECTORY}
