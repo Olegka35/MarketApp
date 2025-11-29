@@ -1,22 +1,33 @@
 package com.tarasov.market.repository;
 
 
-import com.tarasov.market.model.CartItem;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.ListCrudRepository;
+import com.tarasov.market.model.entity.CartItem;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface CartRepository extends ListCrudRepository<CartItem, Long> {
+public interface CartRepository extends ReactiveCrudRepository<CartItem, Long> {
 
-    @EntityGraph(attributePaths = {"offering"})
-    @Query("SELECT c FROM CartItem c")
-    List<CartItem> findAllWithOffering();
+    @Query("""
+    SELECT c.id cart_item_id,
+           c.amount amount_in_cart,
+           o.id offering_id,
+           o.title offering_title,
+           o.description offering_description,
+           o.img_path offering_img_path,
+           o.price offering_price
+    FROM cart c
+    JOIN offerings o ON o.id = c.offering_id
+    """)
+    Flux<OfferingWithCartItem> findAllWithOffering();
 
-    @EntityGraph(attributePaths = {"offering"})
-    Optional<CartItem> findByOffering_Id(Long offeringId);
+    @Query("SELECT EXISTS(SELECT 1 FROM cart WHERE offering_id = :offeringId)")
+    Mono<Boolean> existsByOfferingId(Long offeringId);
+
+    Mono<CartItem> findByOfferingId(Long offeringId);
+    Mono<Void> deleteByOfferingId(Long offeringId);
 }

@@ -1,10 +1,10 @@
 package com.tarasov.market.service.impl;
 
-import com.tarasov.market.model.ImageUploadException;
 import com.tarasov.market.service.ImageService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,13 +17,9 @@ public class ImageServiceImpl implements ImageService {
     private String imageUploadDirectory;
 
     @Override
-    public void uploadImage(MultipartFile image) {
-        try {
-            Path uploadDir = Paths.get(imageUploadDirectory);
-            Path filePath = uploadDir.resolve(image.getOriginalFilename());
-            image.transferTo(filePath.toFile());
-        } catch (Exception exception) {
-            throw new ImageUploadException(exception.getMessage());
-        }
+    public Mono<Void> uploadImage(FilePart image) {
+        Path uploadDir = Paths.get(imageUploadDirectory);
+        Path filePath = uploadDir.resolve(image.filename());
+        return image.transferTo(filePath.toFile());
     }
 }

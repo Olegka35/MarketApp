@@ -1,20 +1,23 @@
 package com.tarasov.market.service.impl;
 
-import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Order;
-import com.tarasov.market.model.OrderItem;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import com.tarasov.market.model.db.OrderWithItem;
+import com.tarasov.market.model.entity.Order;
+import com.tarasov.market.model.entity.OrderItem;
 import com.tarasov.market.model.dto.OrderDto;
 import com.tarasov.market.repository.CartRepository;
+import com.tarasov.market.repository.OrderItemRepository;
 import com.tarasov.market.repository.OrderRepository;
 import com.tarasov.market.service.OrderService;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 
 @Service
@@ -23,52 +26,68 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Override
-    public List<OrderDto> getOrders() {
-        List<Order> orders = orderRepository.findAllWithItems();
-        return orders.stream().map(OrderDto::from).toList();
+    public Flux<OrderDto> getOrders() {
+        return orderRepository.findAllWithItems()
+                .groupBy(OrderWithItem::id)
+                .flatMap(orderGroup ->
+                    orderGroup.collectList().map(OrderDto::from)
+                );
     }
 
     @Override
-    public OrderDto getOrderById(Long id) {
-        return orderRepository.findById(id)
+    public Mono<OrderDto> getOrderById(Long id) {
+        return orderRepository.findByIdWithItems(id)
+                .collectList()
                 .map(OrderDto::from)
-                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+                .switchIfEmpty(Mono.error(new NoSuchElementException("Order not found")));
     }
 
     @Override
     @Transactional
-    public OrderDto createOrderFromCart() {
-        List<CartItem> cartItems = cartRepository.findAllWithOffering();
-        if (cartItems.isEmpty()) {
-            throw new NoResultException("The cart is empty");
-        }
-        Order order = new Order();
-        List<OrderItem> orderItems = convertCartItemsToOrderItems(cartItems, order);
-        BigDecimal totalPrice = calculateTotalPrice(orderItems);
-        order.setOrderItems(orderItems);
-        order.setTotalPrice(totalPrice);
-        cartItems.forEach(cartItem -> cartItem.getOffering().setCartItem(null));
-        cartRepository.deleteAll();
-        return OrderDto.from(orderRepository.save(order));
+    public Mono<OrderDto> createOrderFromCart() {
+        return cartRepository.findAllWithOffering()
+                .switchIfEmpty(Mono.error(new IllegalStateException("The cart is empty")))
+                .collectList()
+                .flatMap(cartItems ->
+                        createAndSaveOrder(cartItems)
+                            .flatMap(order ->
+                                    orderItemRepository.saveAll(convertCartItemsToOrderItems(cartItems, order))
+                                            .collectList()
+                                            .thenReturn(order))
+                            .flatMap(order -> cartRepository.deleteAll().thenReturn(order))
+                )
+                .flatMap(order -> getOrderById(order.getId()));
     }
 
-    private List<OrderItem> convertCartItemsToOrderItems(List<CartItem> cartItems, Order order) {
+    private Mono<Order> createAndSaveOrder(List<OfferingWithCartItem> cartItems) {
+        Order order = new Order();
+        BigDecimal totalPrice = calculateTotalPrice(cartItems);
+        order.setTotalPrice(totalPrice);
+        return orderRepository.save(order);
+    }
+
+
+    private List<OrderItem> convertCartItemsToOrderItems(List<OfferingWithCartItem> cartItems, Order order) {
         return cartItems.stream()
                 .map(cartItem -> {
                     OrderItem orderItem = new OrderItem();
-                    orderItem.setOffering(cartItem.getOffering());
-                    orderItem.setAmount(cartItem.getAmount());
-                    orderItem.setPrice(cartItem.getOffering().getPrice());
-                    orderItem.setOrder(order);
+                    orderItem.setOrderId(order.getId());
+                    orderItem.setOfferingId(cartItem.offeringId());
+                    orderItem.setAmount(cartItem.amountInCart());
+                    orderItem.setUnitPrice(cartItem.offeringPrice());
                     return orderItem;
                 }).toList();
     }
 
-    private BigDecimal calculateTotalPrice(List<OrderItem> orderItems) {
-        return orderItems.stream()
-                .map(oi -> oi.getPrice().multiply(BigDecimal.valueOf(oi.getAmount())))
+
+    private BigDecimal calculateTotalPrice(List<OfferingWithCartItem> cartItems) {
+        return cartItems.stream()
+                .map(cartItem ->
+                        cartItem.offeringPrice()
+                                .multiply(BigDecimal.valueOf(cartItem.amountInCart())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

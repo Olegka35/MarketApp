@@ -1,15 +1,13 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.model.Offering;
-import com.tarasov.market.model.Order;
-import com.tarasov.market.model.OrderItem;
+import com.tarasov.market.configuration.ResetDB;
+import com.tarasov.market.model.db.OrderWithItem;
+import com.tarasov.market.model.entity.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,41 +18,47 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getOrdersTest() {
-        List<Order> orders = orderRepository.findAllWithItems();
-        assertEquals(1, orders.size());
+        List<OrderWithItem> orderItems = orderRepository.findAllWithItems().collectList().block();
+
+        assertNotNull(orderItems);
+        assertEquals(2, orderItems.size());
+        assertEquals(1, orderItems.stream().map(OrderWithItem::id).distinct().count());
+        assertEquals(1L, orderItems.getFirst().id());
+        assertEquals(BigDecimal.valueOf(1000), orderItems.getFirst().totalPrice());
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void getOrderByIDTest() {
-        Optional<Order> order = orderRepository.findById(1L);
-        assertTrue(order.isPresent());
-        assertEquals(BigDecimal.valueOf(1000), order.get().getTotalPrice());
-        assertEquals(2, order.get().getOrderItems().size());
+        List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(1L).collectList().block();
+
+        assertNotNull(orderItems);
+        assertEquals(BigDecimal.valueOf(1000), orderItems.getFirst().totalPrice());
+        assertEquals(2, orderItems.size());
     }
 
     @Test
     public void getNonExistingOrderByIDTest() {
-        Optional<Order> order = orderRepository.findById(100L);
-        assertFalse(order.isPresent());
+        List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(100L).collectList().block();
+        assertNotNull(orderItems);
+        assertTrue(orderItems.isEmpty());
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void createOrderTest() {
         Order order = new Order();
-        List<OrderItem> orderItems = List.of(generateOrderItem(order),  generateOrderItem(order));
         order.setTotalPrice(BigDecimal.valueOf(200));
-        order.setOrderItems(orderItems);
-        order = orderRepository.save(order);
 
-        Optional<Order> createdOrder = orderRepository.findById(order.getId());
-        assertTrue(createdOrder.isPresent());
-        assertEquals(BigDecimal.valueOf(200), createdOrder.get().getTotalPrice());
-        assertEquals(2, createdOrder.get().getOrderItems().size());
+        Order newOrder = orderRepository.save(order)
+                .flatMap(createdOrder -> orderRepository.findById(createdOrder.getId()))
+                .block();
+
+        assertNotNull(newOrder);
+        assertEquals(BigDecimal.valueOf(200), newOrder.getTotalPrice());
     }
 
-    private OrderItem generateOrderItem(Order order) {
+    /*private OrderItem generateOrderItem(Order order) {
         Offering offering = new Offering();
         offering.setId(1L);
 
@@ -64,5 +68,5 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
         orderItem.setOffering(offering);
         orderItem.setAmount(1);
         return orderItem;
-    }
+    }*/
 }

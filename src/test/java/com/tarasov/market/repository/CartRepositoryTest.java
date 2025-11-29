@@ -1,16 +1,14 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Offering;
+import com.tarasov.market.configuration.ResetDB;
+import com.tarasov.market.model.entity.CartItem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 public class CartRepositoryTest extends BaseRepositoryTest {
 
@@ -19,63 +17,90 @@ public class CartRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void findAllCartItemsTest() {
-        assertThat(cartRepository.findAllWithOffering())
+        assertThat(cartRepository.findAllWithOffering().collectList().block())
                 .hasSize(2);
     }
 
     @Test
     public void findCartItemByOfferingIdTest() {
-        Optional<CartItem> item = cartRepository.findByOffering_Id(2L);
-        assertTrue(item.isPresent());
-        assertEquals(2L, item.get().getOffering().getId());
+        CartItem item = cartRepository.findByOfferingId(2L).block();
+        assertNotNull(item);
+        assertEquals(2L, item.getOfferingId());
+    }
+
+    @Test
+    public void existsCartItemByOfferingIdTest() {
+        Boolean exists = cartRepository.existsByOfferingId(2L).block();
+        assertNotNull(exists);
+        assertTrue(exists);
+    }
+
+    @Test
+    public void notExistsCartItemByOfferingIdTest() {
+        Boolean exists = cartRepository.existsByOfferingId(20L).block();
+        assertNotNull(exists);
+        assertFalse(exists);
     }
 
     @Test
     public void findNonExistingCartItemByOfferingIdTest() {
-        Optional<CartItem> item = cartRepository.findByOffering_Id(1L);
-        assertTrue(item.isEmpty());
+        Mono<CartItem> item = cartRepository.findByOfferingId(1L);
+        assertNull(item.block());
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void addCartItemTest() {
         Long offeringId = 1L;
-        Offering offering = new Offering();
-        offering.setId(offeringId);
-        CartItem cartItem = new CartItem(offering, 1);
-        cartRepository.save(cartItem);
+        CartItem cartItem = new CartItem(offeringId, 1);
+        CartItem createdCartItem = cartRepository.save(cartItem).block();
+        assertNotNull(createdCartItem);
+        assertEquals(offeringId, createdCartItem.getOfferingId());
 
-        Optional<CartItem> item = cartRepository.findByOffering_Id(offeringId);
-        assertTrue(item.isPresent());
+        CartItem item = cartRepository.findByOfferingId(offeringId).block();
+        assertNotNull(item);
+        assertEquals(offeringId, item.getOfferingId());
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void deleteCartItemTest() {
         Long offeringId = 5L;
-        Optional<CartItem> item = cartRepository.findByOffering_Id(offeringId);
-        assertTrue(item.isPresent());
+        CartItem item = cartRepository.findByOfferingId(offeringId).block();
+        assertNotNull(item);
 
-        item.get().getOffering().setCartItem(null);
-        cartRepository.delete(item.get());
+        cartRepository.delete(item).block();
 
-        item = cartRepository.findByOffering_Id(offeringId);
-        assertTrue(item.isEmpty());
+        item = cartRepository.findByOfferingId(offeringId).block();
+        assertNull(item);
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void updateCartItemAmountTest() {
         Long offeringId = 5L;
-        Optional<CartItem> item = cartRepository.findByOffering_Id(offeringId);
-        assertTrue(item.isPresent());
-        assertEquals(1, item.get().getAmount());
+        CartItem item = cartRepository.findByOfferingId(offeringId).block();
+        assertNotNull(item);
+        assertEquals(1, item.getAmount());
 
-        item.get().setAmount(2);
-        cartRepository.save(item.get());
+        item.setAmount(2);
+        cartRepository.save(item).block();
 
-        item = cartRepository.findByOffering_Id(offeringId);
-        assertTrue(item.isPresent());
-        assertEquals(2, item.get().getAmount());
+        item = cartRepository.findByOfferingId(offeringId).block();
+        assertNotNull(item);
+        assertEquals(2, item.getAmount());
+    }
+
+    @Test
+    @ResetDB
+    public void deleteByOfferingIdTest() {
+        Long offeringId = 5L;
+        CartItem item = cartRepository.findByOfferingId(offeringId).block();
+        assertNotNull(item);
+
+        cartRepository.deleteByOfferingId(offeringId).block();
+
+        item = cartRepository.findByOfferingId(offeringId).block();
+        assertNull(item);
     }
 }

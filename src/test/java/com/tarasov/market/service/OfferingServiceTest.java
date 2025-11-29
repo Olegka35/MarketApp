@@ -1,32 +1,30 @@
 package com.tarasov.market.service;
 
 
-import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Offering;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import com.tarasov.market.model.db.PageRequest;
+import com.tarasov.market.model.entity.Offering;
 import com.tarasov.market.model.dto.OfferingDto;
 import com.tarasov.market.model.dto.OfferingPage;
-import com.tarasov.market.model.dto.type.SortType;
+import com.tarasov.market.model.type.SortType;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.impl.OfferingServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,11 +45,12 @@ public class OfferingServiceTest {
     @Test
     public void getOfferingByIdTest() {
         long ID = 5L;
-        Offering mockOffering = generateTestOffering(ID);
-        when(offeringRepository.findById(ID)).thenReturn(Optional.of(mockOffering));
+        OfferingWithCartItem mockOffering = generateTestOffering(ID);
+        when(offeringRepository.findByIdWithCart(ID)).thenReturn(Mono.just(mockOffering));
 
-        OfferingDto offeringDto = offeringService.getOffering(ID);
+        OfferingDto offeringDto = offeringService.getOffering(ID).block();
 
+        assertNotNull(offeringDto);
         assertEquals(ID, offeringDto.id());
         assertEquals("Test", offeringDto.title());
         assertEquals("Test description", offeringDto.description());
@@ -63,18 +62,21 @@ public class OfferingServiceTest {
     @Test
     public void getOfferingByIdTest_notFound() {
         long ID = 5L;
-        when(offeringRepository.findById(ID)).thenReturn(Optional.empty());
+        when(offeringRepository.findByIdWithCart(ID)).thenReturn(Mono.empty());
 
-        assertThrows(ResponseStatusException.class, () -> offeringService.getOffering(ID));
+        assertThrows(ResponseStatusException.class, () -> offeringService.getOffering(ID).block());
     }
 
     @Test
     public void searchOfferingsTest_checkResponseProcessing() {
-        Page<Offering> offeringPage = new PageImpl<>(List.of(generateTestOffering(1L), generateTestOffering(4L)));
-        when(offeringRepository.findAllWithCart(PageRequest.of(0, 5)))
-                .thenReturn(offeringPage);
+        PageRequest pageRequest = new PageRequest(1, 5);
+        when(offeringRepository.findOfferings(pageRequest, ""))
+                .thenReturn(Flux.just(generateTestOffering(1L), generateTestOffering(4L)));
+        when(offeringRepository.count()).thenReturn(Mono.just(2L));
 
-        OfferingPage page = offeringService.getOfferings("", SortType.NO, 1, 5);
+        OfferingPage page = offeringService.getOfferings("", SortType.NO, 1, 5).block();
+
+        assertNotNull(page);
         assertEquals(2, page.getOfferings().size());
         OfferingDto lastOffering = page.getOfferings().getLast();
         assertEquals("Test", lastOffering.title());
@@ -84,77 +86,89 @@ public class OfferingServiceTest {
         assertEquals(3, lastOffering.count());
         assertEquals(1, page.getTotalPages());
 
-        verify(offeringRepository).findAllWithCart(PageRequest.of(0, 5));
+        verify(offeringRepository).findOfferings(pageRequest, "");
+        verify(offeringRepository).count();
     }
 
     @Test
     public void searchOfferingsTest_checkSearchParametersProcessing_emptyString_sortByPrice() {
-        PageRequest pageRequest = PageRequest.of(1, 10)
-                .withSort(Sort.by(Sort.Direction.ASC, "price"));
-        when(offeringRepository.findAllWithCart(pageRequest)).thenReturn(new PageImpl<>(List.of()));
+        PageRequest pageRequest = new PageRequest(2, 10, "offering_price");
+        when(offeringRepository.findOfferings(pageRequest, ""))
+                .thenReturn(Flux.empty());
+        when(offeringRepository.count()).thenReturn(Mono.just(2L));
 
-        offeringService.getOfferings("", SortType.PRICE, 2, 10);
+        offeringService.getOfferings("", SortType.PRICE, 2, 10).block();
 
-        verify(offeringRepository).findAllWithCart(pageRequest);
+        verify(offeringRepository).findOfferings(pageRequest, "");
+        verify(offeringRepository).count();
     }
 
     @Test
     public void searchOfferingsTest_checkSearchParametersProcessing_emptyString_sortByTitle() {
-        PageRequest pageRequest = PageRequest.of(1, 10)
-                .withSort(Sort.by(Sort.Direction.ASC, "title"));
-        when(offeringRepository.findAllWithCart(pageRequest)).thenReturn(new PageImpl<>(List.of()));
+        PageRequest pageRequest = new PageRequest(2, 10, "offering_title");
+        when(offeringRepository.findOfferings(pageRequest, ""))
+                .thenReturn(Flux.empty());
+        when(offeringRepository.count()).thenReturn(Mono.just(2L));
 
-        offeringService.getOfferings("", SortType.ALPHA, 2, 10);
+        offeringService.getOfferings("", SortType.ALPHA, 2, 10).block();
 
-        verify(offeringRepository).findAllWithCart(pageRequest);
+        verify(offeringRepository).findOfferings(pageRequest, "");
+        verify(offeringRepository).count();
     }
 
     @Test
     public void searchOfferingsTest_checkSearchParametersProcessing_sortByPrice() {
-        PageRequest pageRequest = PageRequest.of(1, 10)
-                .withSort(Sort.by(Sort.Direction.ASC, "price"));
+        PageRequest pageRequest = new PageRequest(2, 10, "offering_price");
         String search = "Test";
-        when(offeringRepository.findByTitleContainsOrDescriptionContains(search, search, pageRequest))
-                .thenReturn(new PageImpl<>(List.of()));
+        when(offeringRepository.findOfferings(pageRequest, search))
+                .thenReturn(Flux.empty());
+        when(offeringRepository.countByTitleContainingOrDescriptionContaining(search, search))
+                .thenReturn(Mono.just(0));
 
-        offeringService.getOfferings(search, SortType.PRICE, 2, 10);
+        offeringService.getOfferings(search, SortType.PRICE, 2, 10).block();
 
-        verify(offeringRepository).findByTitleContainsOrDescriptionContains(search, search, pageRequest);
+        verify(offeringRepository).findOfferings(pageRequest, search);
+        verify(offeringRepository).countByTitleContainingOrDescriptionContaining(search, search);
     }
 
     @Test
     public void searchOfferingsTest_checkSearchParametersProcessing_noSort() {
-        PageRequest pageRequest = PageRequest.of(1, 10);
+        PageRequest pageRequest = new PageRequest(1, 10);
         String search = "Test";
-        when(offeringRepository.findByTitleContainsOrDescriptionContains(search, search, pageRequest))
-                .thenReturn(new PageImpl<>(List.of()));
+        when(offeringRepository.findOfferings(pageRequest, search))
+                .thenReturn(Flux.empty());
+        when(offeringRepository.countByTitleContainingOrDescriptionContaining(search, search))
+                .thenReturn(Mono.just(0));
 
-        offeringService.getOfferings(search, SortType.NO, 2, 10);
+        offeringService.getOfferings(search, SortType.NO, 1, 10).block();
 
-        verify(offeringRepository).findByTitleContainsOrDescriptionContains(search, search, pageRequest);
+        verify(offeringRepository).findOfferings(pageRequest, search);
+        verify(offeringRepository).countByTitleContainingOrDescriptionContaining(search, search);
     }
 
     @Test
     public void createOfferingTest() {
-        MockMultipartFile mockImage = new MockMultipartFile("image",
-                "NewBalance.png",
-                MediaType.IMAGE_PNG_VALUE,
-                "Test image content".getBytes()
-        );
-        when(offeringRepository.save(any(Offering.class))).thenAnswer(i -> i.getArgument(0));
+        FilePart mockImage = Mockito.mock(FilePart.class);
+        when(mockImage.filename()).thenReturn("NewBalance.png");
+        when(imageService.uploadImage(mockImage)).thenReturn(Mono.empty());
+        when(offeringRepository.save(any(Offering.class)))
+                .thenAnswer(i -> {
+                    Offering createdOffering = i.getArgument(0);
+                    createdOffering.setId(10L);
+                    return Mono.just(createdOffering);
+                });
 
         offeringService.createOffering("Кроссовки",
                 "Кроссовки New Balance",
                 BigDecimal.valueOf(20000),
                 mockImage
-        );
+        ).block();
         verify(imageService).uploadImage(mockImage);
     }
 
-    private Offering generateTestOffering(long id) {
-        Offering offering = new Offering("Test", "Test description", "img.png", BigDecimal.valueOf(100L));
-        offering.setId(id);
-        offering.setCartItem(new CartItem(offering, 3));
-        return offering;
+    private OfferingWithCartItem generateTestOffering(long id) {
+        return new OfferingWithCartItem(id,
+                "Test", "Test description", "img.png", BigDecimal.valueOf(100L),
+                10L, 3);
     }
 }

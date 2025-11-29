@@ -1,27 +1,26 @@
 package com.tarasov.market.service;
 
 
-import com.tarasov.market.model.CartItem;
-import com.tarasov.market.model.Offering;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import com.tarasov.market.model.entity.CartItem;
 import com.tarasov.market.model.dto.CartResponse;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.impl.CartServiceImpl;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,19 +38,19 @@ public class CartServiceTest {
 
     @Test
     public void getCartItemsTest() {
-        Offering offering1 = new Offering();
-        offering1.setId(1L);
-        offering1.setPrice(BigDecimal.valueOf(100));
+        OfferingWithCartItem item1 = new OfferingWithCartItem(1L,
+                "Test", "Test", "test.png", BigDecimal.valueOf(100),
+                10L, 1);
 
-        Offering offering2 = new Offering();
-        offering2.setId(5L);
-        offering2.setPrice(BigDecimal.valueOf(200));
+        OfferingWithCartItem item2 = new OfferingWithCartItem(5L,
+                "Test", "Test", "test.png", BigDecimal.valueOf(200),
+                11L, 4);
 
-        when(cartRepository.findAllWithOffering())
-                .thenReturn(List.of(new CartItem(offering1, 1), new CartItem(offering2, 4)));
+        when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1, item2));
 
-        CartResponse cart = cartService.getCartItems();
+        CartResponse cart = cartService.getCartItems().block();
 
+        assertNotNull(cart);
         assertEquals(2, cart.getCartItems().size());
         assertTrue(cart.getCartItems()
                 .stream()
@@ -62,29 +61,33 @@ public class CartServiceTest {
     @Test
     public void deleteCartItemTest() {
         long id = 1L;
-        CartItem cartItem = new CartItem(new Offering(), 1);
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.of(cartItem));
+        when(cartRepository.existsByOfferingId(id)).thenReturn(Mono.just(true));
+        when(cartRepository.deleteByOfferingId(id)).thenReturn(Mono.empty().then());
 
-        cartService.deleteCartItem(id);
+        cartService.deleteCartItem(id).block();
 
-        verify(cartRepository).delete(cartItem);
+        verify(cartRepository).deleteByOfferingId(id);
     }
 
     @Test
     public void deleteCartItemTest_itemNotFoundInCart() {
         long id = 1L;
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.empty());
+        when(cartRepository.existsByOfferingId(id)).thenReturn(Mono.just(false));
+        when(cartRepository.deleteByOfferingId(id)).thenReturn(Mono.empty().then());
 
-        assertThrows(EntityNotFoundException.class, () -> cartService.deleteCartItem(id));
+        assertThrows(NoSuchElementException.class, () -> cartService.deleteCartItem(id).block());
     }
 
     @Test
     public void addOneCartItemTest_existsInCart() {
         long id = 5L;
-        CartItem cartItem = new CartItem(new Offering(), 1);
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.of(cartItem));
+        CartItem cartItem = new CartItem(id, 1);
+        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
+        when(offeringRepository.existsById(id)).thenReturn(Mono.just(true));
+        when(cartRepository.save(any(CartItem.class)))
+                .thenAnswer(i -> Mono.just(i.getArgument(0)));
 
-        cartService.addOneCartItem(id);
+        cartService.addOneCartItem(id).block();
 
         ArgumentCaptor<CartItem> sentCartItem = ArgumentCaptor.forClass(CartItem.class);
         verify(cartRepository).save(sentCartItem.capture());
@@ -94,31 +97,34 @@ public class CartServiceTest {
     @Test
     public void addOneCartItemTest_firstInCart() {
         long id = 5L;
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.empty());
-        Offering offering = new Offering();
-        when(offeringRepository.findById(id)).thenReturn(Optional.of(offering));
+        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.empty());
+        when(offeringRepository.existsById(id)).thenReturn(Mono.just(true));
+        when(cartRepository.save(any(CartItem.class)))
+                .thenAnswer(i -> Mono.just(i.getArgument(0)));
 
-        cartService.addOneCartItem(id);
+        cartService.addOneCartItem(id).block();
 
-        verify(cartRepository).save(new CartItem(offering, 1));
+        verify(cartRepository).save(new CartItem(id, 1));
     }
 
     @Test
     public void addOneCartItemTest_incorrectOfferingId() {
         long id = 5L;
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.empty());
-        when(offeringRepository.findById(id)).thenReturn(Optional.empty());
+        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.empty());
+        when(offeringRepository.existsById(id)).thenReturn(Mono.just(false));
 
-        assertThrows(EntityNotFoundException.class, () -> cartService.addOneCartItem(id));
+        assertThrows(NoSuchElementException.class, () -> cartService.addOneCartItem(id).block());
     }
 
     @Test
     public void removeOneCartItemTest_notLastInCart() {
         long id = 5L;
-        CartItem cartItem = new CartItem(new Offering(), 3);
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.of(cartItem));
+        CartItem cartItem = new CartItem(id, 3);
+        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
+        when(cartRepository.save(any(CartItem.class)))
+                .thenAnswer(i -> Mono.just(i.getArgument(0)));
 
-        cartService.removeOneCartItem(id);
+        cartService.removeOneCartItem(id).block();
 
         ArgumentCaptor<CartItem> sentCartItem = ArgumentCaptor.forClass(CartItem.class);
         verify(cartRepository).save(sentCartItem.capture());
@@ -128,10 +134,11 @@ public class CartServiceTest {
     @Test
     public void removeOneCartItemTest_lastInCart() {
         long id = 5L;
-        CartItem cartItem = new CartItem(new Offering(), 1);
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.of(cartItem));
+        CartItem cartItem = new CartItem(id, 1);
+        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
+        when(cartRepository.delete(cartItem)).thenReturn(Mono.empty().then());
 
-        cartService.removeOneCartItem(id);
+        cartService.removeOneCartItem(id).block();
 
         verify(cartRepository).delete(cartItem);
     }
@@ -139,8 +146,8 @@ public class CartServiceTest {
     @Test
     public void removeOneCartItemTest_notExistsInCart() {
         long id = 5L;
-        when(cartRepository.findByOffering_Id(id)).thenReturn(Optional.empty());
+        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.empty());
 
-        assertThrows(EntityNotFoundException.class, () -> cartService.removeOneCartItem(id));
+        assertThrows(NoSuchElementException.class, () -> cartService.removeOneCartItem(id).block());
     }
 }

@@ -1,15 +1,13 @@
 package com.tarasov.market.repository;
 
-import com.tarasov.market.model.Offering;
+import com.tarasov.market.configuration.ResetDB;
+import com.tarasov.market.model.db.OfferingWithCartItem;
+import com.tarasov.market.model.db.PageRequest;
+import com.tarasov.market.model.entity.Offering;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,45 +19,63 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void findAllOfferingsTest() {
-        assertThat(offeringRepository.findAllWithCart()).hasSize(5);
+        assertThat(offeringRepository.findAllWithCart().collectList().block()).hasSize(5);
     }
 
     @Test
     public void findOfferingsWithPriceSortingTest() {
-        List<Offering> offerings = offeringRepository.findAllWithCart(Sort.by(Sort.Direction.ASC, "price"));
+        List<OfferingWithCartItem> offerings =
+                offeringRepository.findOfferings(new PageRequest(1, 10, "offering_price"), null)
+                        .collectList()
+                        .block();
+
         assertThat(offerings).hasSize(5);
-        assertThat(offerings.getFirst().getPrice()).isEqualTo(new BigDecimal("990"));
-        assertThat(offerings.getLast().getPrice()).isEqualTo(new BigDecimal("2790"));
+        assertThat(offerings.getFirst().offeringPrice()).isEqualTo(new BigDecimal("990"));
+        assertThat(offerings.getLast().offeringPrice()).isEqualTo(new BigDecimal("2790"));
     }
 
     @Test
     public void findOfferingsWithPriceSortingAndPaginationTest() {
-        List<Offering> offerings = offeringRepository
-                .findAllWithCart(PageRequest.of(1, 3, Sort.by(Sort.Direction.ASC, "price")))
-                .getContent();
+        List<OfferingWithCartItem> offerings = offeringRepository
+                .findOfferings(new PageRequest(2, 3, "offering_price"), null)
+                .collectList()
+                .block();
         assertThat(offerings).hasSize(2);
     }
 
     @Test
     public void findOfferingsWithNameSortingTest() {
-        List<Offering> offerings = offeringRepository.findAllWithCart(Sort.by(Sort.Direction.ASC, "title"));
+        List<OfferingWithCartItem> offerings = offeringRepository
+                .findOfferings(new PageRequest(1, 10, "offering_title"), null)
+                .collectList()
+                .block();
         assertThat(offerings).hasSize(5);
-        assertThat(offerings.getFirst().getTitle()).isEqualTo("Беспроводная мышь");
-        assertThat(offerings.getLast().getTitle()).isEqualTo("Термокружка 500 мл");
+        assertThat(offerings.getFirst().offeringTitle()).isEqualTo("Беспроводная мышь");
+        assertThat(offerings.getLast().offeringTitle()).isEqualTo("Термокружка 500 мл");
+    }
+
+    @Test
+    public void countOfferingsByTitleTest() {
+        Integer count = offeringRepository.countByTitleContainingOrDescriptionContaining(" и ", " и ")
+                .block();
+        assertThat(count).isEqualTo(2);
     }
 
     @Test
     public void searchOfferingsByTitleTest() {
-        List<Offering> offerings = offeringRepository.findByTitleContainsOrDescriptionContains(" и ", " и ");
+        List<OfferingWithCartItem> offerings = offeringRepository
+                .findOfferings(new PageRequest(1, 10), " и ")
+                .collectList()
+                .block();
         assertThat(offerings).hasSize(2);
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void addOfferingTest() {
         Offering offering = offeringRepository.save(
                 new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000))
-        );
+        ).block();
 
         assertThat(offering)
                 .isNotNull()
@@ -68,48 +84,56 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void deleteCreatedOfferingTest() {
-        Offering offering = offeringRepository.save(
-                new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000))
-        );
-        offeringRepository.delete(offering);
-        assertThat(offeringRepository.existsById(offering.getId())).isFalse();
+        Boolean existsAfterDelete =
+                offeringRepository.save(
+                    new Offering("New product", "Description", "product.img", BigDecimal.valueOf(50000)))
+                        .flatMap(offering -> offeringRepository.delete(offering)
+                                .thenReturn(offering.getId()))
+                        .flatMap(id -> offeringRepository.existsById(id))
+                        .block();
+        assertNotNull(existsAfterDelete);
+        assertFalse(existsAfterDelete);
     }
 
     @Test
     public void getOfferingFromCartTest() {
-        Optional<Offering> offering = offeringRepository.findById(2L);
-        assertTrue(offering.isPresent());
-        assertEquals(2L, offering.get().getId());
-        assertEquals("Беспроводная мышь", offering.get().getTitle());
-        assertEquals(2, offering.get().getCartItem().getAmount());
+        OfferingWithCartItem offering = offeringRepository.findByIdWithCart(2L).block();
+
+        assertNotNull(offering);
+        assertEquals(2L, offering.offeringId());
+        assertEquals("Беспроводная мышь", offering.offeringTitle());
+        assertEquals(2, offering.amountInCart());
     }
 
     @Test
     public void getOfferingNotInCartTest() {
-        Optional<Offering> offering = offeringRepository.findById(3L);
-        assertTrue(offering.isPresent());
-        assertEquals(3L, offering.get().getId());
-        assertEquals("Рюкзак городской", offering.get().getTitle());
-        assertNull(offering.get().getCartItem());
+        OfferingWithCartItem offering = offeringRepository.findByIdWithCart(3L).block();
+
+        assertNotNull(offering);
+        assertEquals(3L, offering.offeringId());
+        assertEquals("Рюкзак городской", offering.offeringTitle());
+        assertNull(offering.amountInCart());
     }
 
     @Test
     public void getNonExistingOfferingTest() {
-        Optional<Offering> offering = offeringRepository.findById(400L);
-        assertFalse(offering.isPresent());
+        assertNull(offeringRepository.findByIdWithCart(400L).block());
     }
 
     @Test
-    @Transactional
+    @ResetDB
     public void createOfferingTest() {
         Offering offeringRequest = new Offering("Кроссовки",
                 "Кроссовки New Balance",
                 "newbalance.img",
                 BigDecimal.valueOf(20000));
-        Offering offering = offeringRepository.save(offeringRequest);
 
+        Offering offering = offeringRepository.save(offeringRequest).block();
+
+        assertNotNull(offering);
+        assertNotNull(offering.getId());
         assertEquals("Кроссовки", offering.getTitle());
         assertEquals("Кроссовки New Balance", offering.getDescription());
         assertEquals("newbalance.img", offering.getImgPath());

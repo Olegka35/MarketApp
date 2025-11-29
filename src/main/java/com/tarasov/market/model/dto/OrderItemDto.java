@@ -1,6 +1,6 @@
 package com.tarasov.market.model.dto;
 
-import com.tarasov.market.model.OrderItem;
+import com.tarasov.market.model.db.OrderWithItem;
 
 import java.math.BigDecimal;
 
@@ -10,10 +10,10 @@ public record OrderItemDto(
         BigDecimal price,
         int count
 ) {
-    public static OrderItemDto from(OrderItem orderItem) {
-        return new OrderItemDto(orderItem.getId(),
-                orderItem.getOffering().getTitle(),
-                orderItem.getPrice(),
-                orderItem.getAmount());
+    public static OrderItemDto from(OrderWithItem orderWithItem) {
+        return new OrderItemDto(orderWithItem.orderItemId(),
+                orderWithItem.offeringTitle(),
+                orderWithItem.orderItemPrice(),
+                orderWithItem.orderItemAmount());
     }
 }

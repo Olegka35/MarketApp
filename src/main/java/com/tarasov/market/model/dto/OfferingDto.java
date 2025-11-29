@@ -1,6 +1,6 @@
 package com.tarasov.market.model.dto;
 
-import com.tarasov.market.model.Offering;
+import com.tarasov.market.model.db.OfferingWithCartItem;
 
 import java.math.BigDecimal;
 
@@ -12,13 +12,13 @@ public record OfferingDto(
         BigDecimal price,
         int count
 ) {
-    public static OfferingDto from(Offering offering) {
-        int cartCount = offering.getCartItem() == null ? 0 : offering.getCartItem().getAmount();
-        return new OfferingDto(offering.getId(),
-                offering.getTitle(),
-                offering.getDescription(),
-                offering.getImgPath(),
-                offering.getPrice(),
+    public static OfferingDto from(OfferingWithCartItem offeringWithCartItem) {
+        int cartCount = offeringWithCartItem.amountInCart() == null ? 0 : offeringWithCartItem.amountInCart();
+        return new OfferingDto(offeringWithCartItem.offeringId(),
+                offeringWithCartItem.offeringTitle(),
+                offeringWithCartItem.offeringDescription(),
+                offeringWithCartItem.offeringImgPath(),
+                offeringWithCartItem.offeringPrice(),
                 cartCount);
     }
 
