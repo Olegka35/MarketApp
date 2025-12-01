@@ -53,10 +53,7 @@ public class OrderServiceImpl implements OrderService {
                 .collectList()
                 .flatMap(cartItems ->
                         createAndSaveOrder(cartItems)
-                            .flatMap(order ->
-                                    orderItemRepository.saveAll(convertCartItemsToOrderItems(cartItems, order))
-                                            .collectList()
-                                            .thenReturn(order))
+                            .flatMap(order -> saveOrderItems(order, cartItems))
                             .flatMap(order -> cartRepository.deleteAll().thenReturn(order))
                 )
                 .flatMap(order -> getOrderById(order.getId()));
@@ -70,6 +67,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
+    private Mono<Order> saveOrderItems(Order order, List<OfferingWithCartItem> cartItems) {
+        return orderItemRepository.saveAll(convertCartItemsToOrderItems(cartItems, order))
+                .collectList()
+                .thenReturn(order);
+    }
+
     private List<OrderItem> convertCartItemsToOrderItems(List<OfferingWithCartItem> cartItems, Order order) {
         return cartItems.stream()
                 .map(cartItem -> {
@@ -81,7 +84,6 @@ public class OrderServiceImpl implements OrderService {
                     return orderItem;
                 }).toList();
     }
-
 
     private BigDecimal calculateTotalPrice(List<OfferingWithCartItem> cartItems) {
         return cartItems.stream()

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -27,13 +28,8 @@ public class CartServiceImpl implements CartService {
         return cartRepository.findAllWithOffering()
                 .map(CartItemDto::from)
                 .collectList()
-                .map(cartItems -> {
-                    BigDecimal totalPrice = cartItems
-                            .stream()
-                            .map(item -> item.price().multiply(BigDecimal.valueOf(item.count())))
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    return new CartResponse(cartItems, totalPrice);
-                });
+                .map(cartItems ->
+                        new CartResponse(cartItems, calculateTotalPrice(cartItems)));
     }
 
     @Override
@@ -79,5 +75,13 @@ public class CartServiceImpl implements CartService {
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
                 .then(cartRepository.deleteByOfferingId(offeringId));
+    }
+
+    private BigDecimal calculateTotalPrice(List<CartItemDto> cartItems) {
+        return cartItems
+                .stream()
+                .map(item ->
+                        item.price().multiply(BigDecimal.valueOf(item.count())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
