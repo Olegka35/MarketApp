@@ -1,0 +1,3 @@
+logging:
+  level:
+    io.r2dbc.postgresql: DEBUG
