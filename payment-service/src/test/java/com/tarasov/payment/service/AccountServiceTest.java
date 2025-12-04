@@ -64,4 +64,35 @@ public class AccountServiceTest {
         assertThrows(NoSuchElementException.class,
                 () -> accountService.updateAccountBalance(1L, BigDecimal.TEN).block());
     }
+
+    @Test
+    public void deductBalanceTest() {
+        Account mockAccount = new Account(1L, BigDecimal.valueOf(5000));
+        when(accountRepository.findById(1L))
+                .thenReturn(Mono.just(mockAccount));
+        when(accountRepository.save(any(Account.class)))
+                .thenAnswer(i -> Mono.just(i.getArgument(0)));
+
+        BigDecimal amount = accountService.deductBalance(1L, BigDecimal.valueOf(200)).block();
+
+        assertEquals(BigDecimal.valueOf(4800), amount);
+    }
+
+    @Test
+    public void deductNotEnoughBalanceTest() {
+        Account mockAccount = new Account(1L, BigDecimal.valueOf(5000));
+        when(accountRepository.findById(1L))
+                .thenReturn(Mono.just(mockAccount));
+
+        assertThrows(IllegalStateException.class,
+                () -> accountService.deductBalance(1L, BigDecimal.valueOf(5001)).block());
+    }
+
+    @Test
+    public void deductNonExistingAccountBalanceTest() {
+        when(accountRepository.findById(1L)).thenReturn(Mono.empty());
+
+        assertThrows(NoSuchElementException.class,
+                () -> accountService.updateAccountBalance(1L, BigDecimal.TEN).block());
+    }
 }
