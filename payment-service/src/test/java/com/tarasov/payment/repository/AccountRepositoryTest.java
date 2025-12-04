@@ -1,9 +1,12 @@
 package com.tarasov.payment.repository;
 
 
+import com.tarasov.payment.configuration.BalanceResetExtension;
+import com.tarasov.payment.configuration.ResetBalance;
 import com.tarasov.payment.model.Account;
 import com.tarasov.payment.configuration.PostgresTestcontainer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.context.ImportTestcontainers;
@@ -17,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @Testcontainers
 @ImportTestcontainers(PostgresTestcontainer.class)
+@ExtendWith(BalanceResetExtension.class)
 public class AccountRepositoryTest {
 
     @Autowired
@@ -37,6 +41,7 @@ public class AccountRepositoryTest {
     }
 
     @Test
+    @ResetBalance
     void updateAccountBalanceTest() {
         Account account = accountRepository.findById(1L).block();
         assertNotNull(account);
@@ -47,12 +52,10 @@ public class AccountRepositoryTest {
         Account updatedAccount = accountRepository.save(account).block();
         assertNotNull(updatedAccount);
         assertThat(updatedAccount.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(2000L));
-
-        account.setAmount(BigDecimal.valueOf(5000L));
-        accountRepository.save(account).block();
     }
 
     @Test
+    @ResetBalance
     void updateAccountToZeroBalanceTest() {
         Account account = accountRepository.findById(1L).block();
         assertNotNull(account);
@@ -63,12 +66,10 @@ public class AccountRepositoryTest {
         Account updatedAccount = accountRepository.save(account).block();
         assertNotNull(updatedAccount);
         assertThat(updatedAccount.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-
-        account.setAmount(BigDecimal.valueOf(5000L));
-        accountRepository.save(account).block();
     }
 
     @Test
+    @ResetBalance
     void updateAccountToNegativeBalanceTest() {
         Account account = accountRepository.findById(1L).block();
         assertNotNull(account);
