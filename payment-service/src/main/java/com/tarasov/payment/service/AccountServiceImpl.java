@@ -2,6 +2,7 @@ package com.tarasov.payment.service;
 
 
 import com.tarasov.payment.model.Account;
+import com.tarasov.payment.model.UnsufficientBalanceException;
 import com.tarasov.payment.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,7 +41,7 @@ public class AccountServiceImpl implements AccountService {
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Account not exist")))
                 .flatMap(account -> {
                     if (account.getAmount().compareTo(value) < 0) {
-                        return Mono.error(new IllegalStateException("Balance not enough for the operation"));
+                        return Mono.error(new UnsufficientBalanceException("Balance not enough for the operation"));
                     }
                     return processBalanceUpdate(account, account.getAmount().subtract(value));
                 })

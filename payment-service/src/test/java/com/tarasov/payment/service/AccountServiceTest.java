@@ -1,6 +1,7 @@
 package com.tarasov.payment.service;
 
 import com.tarasov.payment.model.Account;
+import com.tarasov.payment.model.UnsufficientBalanceException;
 import com.tarasov.payment.repository.AccountRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -84,7 +85,7 @@ public class AccountServiceTest {
         when(accountRepository.findById(1L))
                 .thenReturn(Mono.just(mockAccount));
 
-        assertThrows(IllegalStateException.class,
+        assertThrows(UnsufficientBalanceException.class,
                 () -> accountService.deductBalance(1L, BigDecimal.valueOf(5001)).block());
     }
 
