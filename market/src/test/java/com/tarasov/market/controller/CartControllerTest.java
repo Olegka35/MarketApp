@@ -8,7 +8,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -226,7 +226,7 @@ class CartControllerTest extends BaseControllerTest {
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location",
                         String.format("/items?search=%s&sort=%s&pageNumber=%d&pageSize=%d",
-                                URLEncoder.encode(Optional.ofNullable(search).orElse(""), Charset.defaultCharset()),
+                                URLEncoder.encode(Optional.ofNullable(search).orElse(""), StandardCharsets.UTF_8),
                                 Optional.ofNullable(sort).orElse("NO"),
                                 Integer.valueOf(Optional.ofNullable(pageNumber).orElse("1")),
                                 Integer.valueOf(Optional.ofNullable(pageSize).orElse("5")))
