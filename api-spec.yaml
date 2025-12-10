@@ -13,6 +13,8 @@ paths:
     get:
       operationId: getAccountById
       summary: Get account details
+      tags:
+        - Payment
       parameters:
         - $ref: '#/components/parameters/AccountId'
       responses:
@@ -26,6 +28,8 @@ paths:
     post:
       operationId: makePayment
       summary: Make payment
+      tags:
+        - Payment
       parameters:
         - $ref: '#/components/parameters/AccountId'
       requestBody:
