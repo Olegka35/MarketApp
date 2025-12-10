@@ -49,7 +49,11 @@
                 <form action="/buy" method="post" th:if="${!items.isEmpty()}">
                     <div class="hstack gap-3">
                         <h2 th:text="'Итого: '+${total}+' руб.'"/>
-                        <button class="btn btn-warning ms-auto">Купить</button>
+                        <span class="ms-auto" th:title="${payment_error}">
+                            <button class="btn ms-auto "
+                                    th:classappend="${payment_error} == '' ? 'btn-warning' : 'btn-secondary'"
+                                    th:disabled="${payment_error} != ''">Купить</button>
+                        </span>
                     </div>
                 </form>
             </div>

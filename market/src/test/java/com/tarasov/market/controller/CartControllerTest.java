@@ -1,27 +1,38 @@
 package com.tarasov.market.controller;
 
 import com.tarasov.market.configuration.ResetDB;
-import com.tarasov.market.repository.CartRepository;
+import com.tarasov.market.model.BalanceInfo;
+import com.tarasov.market.service.PaymentService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.util.ReflectionTestUtils;
+import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.net.ConnectException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 
 class CartControllerTest extends BaseControllerTest {
 
     @Autowired
-    CartRepository cartRepository;
+    PaymentService paymentService;
 
     @BeforeEach
     void setUp() {
-        cartRepository.findAllWithOffering().collectList().subscribe(System.out::println);
+        MockitoAnnotations.openMocks(this);
+        ReflectionTestUtils.setField(paymentService, "paymentApi", paymentApi);
+
+        when(paymentApi.getAccountById(1L))
+                .thenReturn(Mono.just(new BalanceInfo().balance(BigDecimal.valueOf(5000))));
     }
 
     @Test
@@ -39,6 +50,52 @@ class CartControllerTest extends BaseControllerTest {
                     assertTrue(html.contains("Зонт складной"));
                     assertTrue(html.contains("/umbrella.jpg"));
                     assertTrue(html.contains("990 руб."));
+                    assertFalse(html.contains("Not enough balance"));
+                    assertFalse(html.contains("Payment service not available"));
+                });
+    }
+
+    @Test
+    public void getCartItemsTest_insufficientBalance() {
+        when(paymentApi.getAccountById(1L))
+                .thenReturn(Mono.just(new BalanceInfo().balance(BigDecimal.valueOf(5))));
+
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("/wireless_mouse.jpg"));
+                    assertTrue(html.contains("3170 руб."));
+                    assertTrue(html.contains("Зонт складной"));
+                    assertTrue(html.contains("/umbrella.jpg"));
+                    assertTrue(html.contains("990 руб."));
+                    assertTrue(html.contains("Not enough balance"));
+                });
+    }
+
+    @Test
+    public void getCartItemsTest_paymentServiceNotAvailable() {
+        when(paymentApi.getAccountById(1L))
+                .thenReturn(Mono.error(new ConnectException()));
+
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("/wireless_mouse.jpg"));
+                    assertTrue(html.contains("3170 руб."));
+                    assertTrue(html.contains("Зонт складной"));
+                    assertTrue(html.contains("/umbrella.jpg"));
+                    assertTrue(html.contains("990 руб."));
+                    assertTrue(html.contains("Payment service not available"));
                 });
     }
 

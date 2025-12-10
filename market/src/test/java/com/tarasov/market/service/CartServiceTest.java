@@ -4,6 +4,7 @@ package com.tarasov.market.service;
 import com.tarasov.market.model.db.OfferingWithCartItem;
 import com.tarasov.market.model.entity.CartItem;
 import com.tarasov.market.model.dto.CartResponse;
+import com.tarasov.market.model.type.PaymentError;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.impl.CartServiceImpl;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.net.ConnectException;
 import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,6 +38,9 @@ public class CartServiceTest {
     @Mock
     private CartRepository cartRepository;
 
+    @Mock
+    private PaymentService paymentService;
+
     @Test
     public void getCartItemsTest() {
         OfferingWithCartItem item1 = new OfferingWithCartItem(1L,
@@ -47,6 +52,7 @@ public class CartServiceTest {
                 11L, 4);
 
         when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1, item2));
+        when(paymentService.getAccountBalance()).thenReturn(Mono.just(BigDecimal.valueOf(10000)));
 
         CartResponse cart = cartService.getCartItems().block();
 
@@ -56,6 +62,49 @@ public class CartServiceTest {
                 .stream()
                 .allMatch(ci -> ci.id() == 1L || ci.id() == 5L));
         assertEquals(BigDecimal.valueOf(900), cart.getTotalPrice());
+        assertNull(cart.getError());
+    }
+
+    @Test
+    public void getCartItemsTest_insufficientBalance() {
+        OfferingWithCartItem item1 = new OfferingWithCartItem(1L,
+                "Test", "Test description", "test.png", BigDecimal.valueOf(100),
+                10L, 1);
+
+        when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1));
+        when(paymentService.getAccountBalance()).thenReturn(Mono.just(BigDecimal.valueOf(5)));
+
+        CartResponse cart = cartService.getCartItems().block();
+
+        assertNotNull(cart);
+        assertEquals(1, cart.getCartItems().size());
+        assertEquals(1L, cart.getCartItems().getFirst().id());
+        assertEquals(BigDecimal.valueOf(100), cart.getCartItems().getFirst().price());
+        assertEquals("Test", cart.getCartItems().getFirst().title());
+        assertEquals("Test description", cart.getCartItems().getFirst().description());
+        assertEquals(BigDecimal.valueOf(100), cart.getTotalPrice());
+        assertEquals(PaymentError.INSUFFICIENT_BALANCE, cart.getError());
+    }
+
+    @Test
+    public void getCartItemsTest_paymentServiceNotAvailable() {
+        OfferingWithCartItem item1 = new OfferingWithCartItem(1L,
+                "Test", "Test description", "test.png", BigDecimal.valueOf(100),
+                10L, 1);
+
+        when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1));
+        when(paymentService.getAccountBalance()).thenReturn(Mono.error(new ConnectException()));
+
+        CartResponse cart = cartService.getCartItems().block();
+
+        assertNotNull(cart);
+        assertEquals(1, cart.getCartItems().size());
+        assertEquals(1L, cart.getCartItems().getFirst().id());
+        assertEquals(BigDecimal.valueOf(100), cart.getCartItems().getFirst().price());
+        assertEquals("Test", cart.getCartItems().getFirst().title());
+        assertEquals("Test description", cart.getCartItems().getFirst().description());
+        assertEquals(BigDecimal.valueOf(100), cart.getTotalPrice());
+        assertEquals(PaymentError.PAYMENT_SERVICE_NOT_AVAILABLE, cart.getError());
     }
 
     @Test

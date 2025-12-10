@@ -1,35 +1,50 @@
 package com.tarasov.market.service.impl;
 
 
-import com.tarasov.market.model.entity.CartItem;
 import com.tarasov.market.model.dto.CartItemDto;
 import com.tarasov.market.model.dto.CartResponse;
+import com.tarasov.market.model.entity.CartItem;
+import com.tarasov.market.model.type.PaymentError;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.CartService;
+import com.tarasov.market.service.PaymentService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
     private final OfferingRepository offeringRepository;
+    private final PaymentService paymentService;
 
     @Override
     public Mono<CartResponse> getCartItems() {
-        return cartRepository.findAllWithOffering()
-                .map(CartItemDto::from)
-                .collectList()
-                .map(cartItems ->
-                        new CartResponse(cartItems, calculateTotalPrice(cartItems)));
+        return Mono.zip(
+                cartRepository.findAllWithOffering()
+                        .map(CartItemDto::from)
+                        .collectList()
+                        .map(cartItems ->
+                                new CartResponse(cartItems, calculateTotalPrice(cartItems))),
+                paymentService.getAccountBalance()
+                        .map(Optional::of)
+                        .onErrorResume(error -> {
+                            log.error("Error during GetBalance request to Payment Service", error);
+                            return Mono.just(Optional.empty());
+                        })
+        ).map(this::combineCartResponse);
     }
 
     @Override
@@ -40,17 +55,8 @@ public class CartServiceImpl implements CartService {
                     cartItem.setAmount(cartItem.getAmount() + 1);
                     return cartRepository.save(cartItem);
                 })
-                .switchIfEmpty(
-                        offeringRepository.existsById(offeringId)
-                                .flatMap(exists -> {
-                                    if (exists) {
-                                        CartItem newCartItem = new CartItem(offeringId, 1);
-                                        return cartRepository.save(newCartItem);
-                                    } else {
-                                        return Mono.error(new NoSuchElementException("Offering not found"));
-                                    }
-                                })
-                ).then();
+                .switchIfEmpty(createCartItem(offeringId))
+                .then();
     }
 
     @Override
@@ -83,5 +89,30 @@ public class CartServiceImpl implements CartService {
                 .map(item ->
                         item.price().multiply(BigDecimal.valueOf(item.count())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private CartResponse combineCartResponse(Tuple2<CartResponse, Optional<BigDecimal>> tupleResult) {
+        CartResponse cartResponse = tupleResult.getT1();
+        tupleResult.getT2().ifPresentOrElse(
+                balance -> {
+                    if (balance.compareTo(cartResponse.getTotalPrice()) < 0) {
+                        cartResponse.setError(PaymentError.INSUFFICIENT_BALANCE);
+                    }
+                },
+                () -> cartResponse.setError(PaymentError.PAYMENT_SERVICE_NOT_AVAILABLE)
+        );
+        return cartResponse;
+    }
+
+    private Mono<CartItem> createCartItem(Long offeringId) {
+        return offeringRepository.existsById(offeringId)
+                .flatMap(exists -> {
+                    if (exists) {
+                        CartItem newCartItem = new CartItem(offeringId, 1);
+                        return cartRepository.save(newCartItem);
+                    } else {
+                        return Mono.error(new NoSuchElementException("Offering not found"));
+                    }
+                });
     }
 }

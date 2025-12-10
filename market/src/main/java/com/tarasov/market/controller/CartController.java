@@ -2,6 +2,7 @@ package com.tarasov.market.controller;
 
 import com.tarasov.market.model.dto.CartUpdateRequest;
 import com.tarasov.market.model.type.ActionType;
+import com.tarasov.market.model.type.PaymentError;
 import com.tarasov.market.service.CartService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
+
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -24,6 +27,10 @@ public class CartController {
                         Rendering.view("cart")
                                 .modelAttribute("items", cartResponse.getCartItems())
                                 .modelAttribute("total", cartResponse.getTotalPrice())
+                                .modelAttribute("payment_error",
+                                        Optional.ofNullable(cartResponse.getError())
+                                                .map(PaymentError::getMessage)
+                                                .orElse(""))
                                 .build());
     }
 
