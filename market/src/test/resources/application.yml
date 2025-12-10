@@ -4,3 +4,7 @@ offering:
 logging:
   level:
     io.r2dbc.postgresql: DEBUG
+
+payment:
+  service:
+    account-id: 1
