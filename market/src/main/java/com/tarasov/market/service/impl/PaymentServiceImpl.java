@@ -19,6 +19,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     public PaymentServiceImpl(PaymentApi paymentApi,
                               @Value("${payment.service.account-id}") Long accountId) {
+        if (System.getenv("PAYMENT_SERVICE_URL") != null) {
+            paymentApi.getApiClient().setBasePath(System.getenv("PAYMENT_SERVICE_URL"));
+        }
         this.paymentApi = paymentApi;
         this.accountId = accountId;
     }

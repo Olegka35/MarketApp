@@ -13,6 +13,7 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_URL=${DB_URL}
       - IMAGE_DIRECTORY=/app/images
+      - PAYMENT_SERVICE_URL=http://payment-service:8080
 
   payment-service:
     build: ./payment-service
