@@ -5,10 +5,12 @@ import com.tarasov.market.model.db.OrderWithItem;
 import com.tarasov.market.model.entity.Order;
 import com.tarasov.market.model.entity.OrderItem;
 import com.tarasov.market.model.dto.OrderDto;
+import com.tarasov.market.model.exception.PaymentException;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OrderItemRepository;
 import com.tarasov.market.repository.OrderRepository;
 import com.tarasov.market.service.OrderService;
+import com.tarasov.market.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
     private final OrderItemRepository orderItemRepository;
+    private final PaymentService paymentService;
 
     @Override
     public Flux<OrderDto> getOrders() {
@@ -51,12 +54,9 @@ public class OrderServiceImpl implements OrderService {
         return cartRepository.findAllWithOffering()
                 .switchIfEmpty(Mono.error(new IllegalStateException("The cart is empty")))
                 .collectList()
-                .flatMap(cartItems ->
-                        createAndSaveOrder(cartItems)
-                            .flatMap(order -> saveOrderItems(order, cartItems))
-                            .flatMap(order -> cartRepository.deleteAll().thenReturn(order))
-                )
-                .flatMap(order -> getOrderById(order.getId()));
+                .flatMap(this::processOrderCreation)
+                .flatMap(this::getOrderById)
+                .flatMap(this::processPayment);
     }
 
     private Mono<Order> createAndSaveOrder(List<OfferingWithCartItem> cartItems) {
@@ -91,5 +91,17 @@ public class OrderServiceImpl implements OrderService {
                         cartItem.offeringPrice()
                                 .multiply(BigDecimal.valueOf(cartItem.amountInCart())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Mono<Long> processOrderCreation(List<OfferingWithCartItem> cartItems) {
+        return createAndSaveOrder(cartItems)
+                .flatMap(order -> saveOrderItems(order, cartItems))
+                .flatMap(order -> cartRepository.deleteAll().thenReturn(order.getId()));
+    }
+
+    private Mono<OrderDto> processPayment(OrderDto order) {
+        return paymentService.makePayment(order.totalSum())
+                .onErrorMap(e -> new PaymentException())
+                .then(Mono.just(order));
     }
 }

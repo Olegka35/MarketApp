@@ -44,6 +44,9 @@ public class OrderServiceTest {
     @Mock
     private OrderItemRepository orderItemRepository;
 
+    @Mock
+    private PaymentService paymentService;
+
     @Test
     public void getOrdersTest() {
         when(orderRepository.findAllWithItems()).thenReturn(generateTestOrders());
@@ -126,6 +129,7 @@ public class OrderServiceTest {
         when(cartRepository.deleteAll()).thenReturn(Mono.empty().then());
         when(orderRepository.findByIdWithItems(1L))
                 .thenReturn(generateTestOrders().filter(order -> order.id().equals(1L)));
+        when(paymentService.makePayment(any())).thenReturn(Mono.just(BigDecimal.TEN));
 
         orderService.createOrderFromCart().block();
 
@@ -135,6 +139,8 @@ public class OrderServiceTest {
         verify(orderRepository).save(orderArgumentCaptor.capture());
         Order savedOrder = orderArgumentCaptor.getValue();
         assertEquals(BigDecimal.valueOf(900), savedOrder.getTotalPrice());
+
+        verify(paymentService).makePayment(BigDecimal.valueOf(900));
 
         ArgumentCaptor<List<OrderItem>> orderItemsCaptor = ArgumentCaptor.forClass(List.class);
         verify(orderItemRepository).saveAll(orderItemsCaptor.capture());
