@@ -15,14 +15,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -64,7 +62,7 @@ public class OfferingServiceTest {
         long ID = 5L;
         when(offeringRepository.findByIdWithCart(ID)).thenReturn(Mono.empty());
 
-        assertThrows(ResponseStatusException.class, () -> offeringService.getOffering(ID).block());
+        assertThrows(NoSuchElementException.class, () -> offeringService.getOffering(ID).block());
     }
 
     @Test

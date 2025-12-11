@@ -11,14 +11,13 @@ import com.tarasov.market.service.ImageService;
 import com.tarasov.market.service.OfferingService;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.NoSuchElementException;
 
 
 @Service
@@ -31,7 +30,7 @@ public class OfferingServiceImpl implements OfferingService {
     @Override
     public Mono<OfferingDto> getOffering(long id) {
         return offeringRepository.findByIdWithCart(id)
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .switchIfEmpty(Mono.error(new NoSuchElementException()))
                 .map(OfferingDto::from);
     }
 
