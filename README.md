@@ -21,7 +21,10 @@ DB_PASSWORD={DB password}
 IMAGE_DIRECTORY={path to directory with offering images}
 ```
 
-## 3. Start application
+## 3. Generate Open API classes for server and client parts of Payment Service
+- Build market-app-parent module with children: mvn clean install 
+
+## 4. Start application
 
 There are 3 launch options: from IDE, local launch, docker launch.
 
