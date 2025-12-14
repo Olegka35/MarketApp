@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.reactive.result.view.Rendering;
+import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 import java.util.NoSuchElementException;
@@ -29,6 +31,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.PAYMENT_REQUIRED)
     public Mono<Rendering> handlePaymentException(Exception e) {
         LOGGER.error("Payment error", e);
+        return Mono.just(Rendering.view("error").build());
+    }
+
+    @ExceptionHandler( { HandlerMethodValidationException.class, ServerWebInputException.class } )
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Mono<Rendering> handleValidationFailedException(Exception e) {
+        LOGGER.error("Failed validation", e);
         return Mono.just(Rendering.view("error").build());
     }
 
