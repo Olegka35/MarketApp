@@ -1,5 +1,6 @@
 offering:
   images-directory: ./offering_images_test
+  cache-time: 5
 
 logging:
   level:

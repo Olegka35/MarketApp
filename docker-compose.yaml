@@ -14,6 +14,8 @@ services:
       - DB_URL=${DB_URL}
       - IMAGE_DIRECTORY=/app/images
       - PAYMENT_SERVICE_URL=http://payment-service:8080
+      - SPRING_DATA_REDIS_HOST=redis-server
+      - SPRING_DATA_REDIS_PORT=6379
 
   payment-service:
     build: ./payment-service
@@ -24,3 +26,8 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_URL=${DB_URL}
+
+  redis-server:
+    image: redis:7.4.2-bookworm
+    ports:
+      - "6379:6379"

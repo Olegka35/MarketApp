@@ -4,6 +4,7 @@ package com.tarasov.market.controller;
 import com.tarasov.market.api.PaymentApi;
 import com.tarasov.market.configuration.DatabaseResetExtension;
 import com.tarasov.market.configuration.PostgresTestcontainer;
+import com.tarasov.market.configuration.RedisTestcontainer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest
 @AutoConfigureWebTestClient
 @Testcontainers
-@ImportTestcontainers(PostgresTestcontainer.class)
+@ImportTestcontainers( { PostgresTestcontainer.class, RedisTestcontainer.class } )
 @ExtendWith(DatabaseResetExtension.class)
 public class BaseControllerTest {
 

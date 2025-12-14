@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 public interface CartRepository extends ReactiveCrudRepository<CartItem, Long> {
 
@@ -29,5 +31,6 @@ public interface CartRepository extends ReactiveCrudRepository<CartItem, Long> {
     Mono<Boolean> existsByOfferingId(Long offeringId);
 
     Mono<CartItem> findByOfferingId(Long offeringId);
+    Flux<CartItem> findByOfferingIdIn(List<Long> offeringIds);
     Mono<Void> deleteByOfferingId(Long offeringId);
 }
