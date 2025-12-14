@@ -31,4 +31,11 @@ public class GlobalExceptionHandler {
         LOGGER.error("Payment error", e);
         return Mono.just(Rendering.view("error").build());
     }
+
+    @ExceptionHandler( { Exception.class })
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Mono<Rendering> handleInternalExceptions(Exception e) {
+        LOGGER.error("Internal server error", e);
+        return Mono.just(Rendering.view("error").build());
+    }
 }
