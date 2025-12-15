@@ -1,0 +1,18 @@
+{
+  "properties": [
+    {
+      "name": "offering.images-directory",
+      "type": "java.lang.String",
+      "description": "Location of offering pictures."
+    },
+    {
+      "name": "payment.service.account-id",
+      "type": "java.lang.String",
+      "description": "ID of account in Payment Service."
+    },
+    {
+      "name": "offering.cache-time",
+      "type": "java.lang.String",
+      "description": "Time in minutes for offering cache in Redis."
+    }
+  ] }

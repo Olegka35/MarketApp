@@ -1,8 +1,0 @@
-{
-  "properties": [
-    {
-      "name": "offering.images-directory",
-      "type": "java.lang.String",
-      "description": "Location of offering pictures."
-  }
-] }

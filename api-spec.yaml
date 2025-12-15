@@ -1,0 +1,105 @@
+openapi: 3.0.3
+info:
+  title: Account API
+  description: API to work with account balances
+  version: 1.0.0
+servers:
+  - url: http://localhost:{port}
+    variables:
+      port:
+        default: "8081"
+paths:
+  /account/{id}:
+    get:
+      operationId: getAccountById
+      summary: Get account details
+      tags:
+        - Payment
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessfulBalanceResponse'
+        '400':
+          description: 'Incorrect request parameters'
+        '404':
+          $ref: '#/components/responses/AccountNotFoundResponse'
+  /account/{id}/payment:
+    post:
+      operationId: makePayment
+      summary: Make payment
+      tags:
+        - Payment
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessfulBalanceResponse'
+        '400':
+          description: 'Incorrect request parameters'
+        '404':
+          $ref: '#/components/responses/AccountNotFoundResponse'
+        '402':
+          description: 'Not enough balance on account for payment'
+
+components:
+  schemas:
+    BalanceInfo:
+      type: object
+      properties:
+        balance:
+          type: number
+          exclusiveMinimum: 0
+          description: Account balance
+      required:
+        - balance
+
+    PaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          minimum: 0
+          exclusiveMinimum: true
+          description: Payment amount to deduct from account balance
+      required:
+        - amount
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error description
+
+  parameters:
+    AccountId:
+      name: id
+      in: path
+      description: ID of account
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+
+  responses:
+    SuccessfulBalanceResponse:
+      description: Response with account balance amount
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BalanceInfo'
+
+    AccountNotFoundResponse:
+      description: Account with this ID not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
