@@ -20,6 +20,7 @@
             </div>
         </div>
     </div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"/>
     <div class="row p-2">
         <div class="col">
             <form th:action="@{/login}" method="post">
