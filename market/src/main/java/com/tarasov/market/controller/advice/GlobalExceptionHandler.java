@@ -1,4 +1,4 @@
-package com.tarasov.market.controller;
+package com.tarasov.market.controller.advice;
 
 
 import com.tarasov.market.model.exception.PaymentException;
