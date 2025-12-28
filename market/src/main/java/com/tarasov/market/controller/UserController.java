@@ -1,14 +1,13 @@
 package com.tarasov.market.controller;
 
+import com.tarasov.market.model.dto.RegistrationRequest;
 import com.tarasov.market.model.exception.UserAlreadyExistsException;
 import com.tarasov.market.service.security.UserService;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
 import reactor.core.publisher.Mono;
 
@@ -30,9 +29,8 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public Mono<Rendering> registerAccount(@RequestPart @NotBlank String username,
-                                           @RequestPart @NotBlank String password) {
-        return userService.registerAccount(username, password)
+    public Mono<Rendering> registerAccount(@Valid @ModelAttribute RegistrationRequest registrationRequest) {
+        return userService.registerAccount(registrationRequest.username(), registrationRequest.password())
                 .doOnError(UserAlreadyExistsException.class,
                         e -> Rendering.view("register").build())
                 .map(user -> Rendering.view("login").build());

@@ -25,11 +25,11 @@ public class SecurityConfig {
         return http
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/items/new").hasRole("ADMIN")
-                        .pathMatchers(HttpMethod.GET, "/login", "/logout", "/register").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/login", "/logout", "/register", "/", "/items/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/register").permitAll()
                         .anyExchange().authenticated()
                 )
-                .formLogin(formLoginSpec ->  formLoginSpec.loginPage("/login"))
+                .formLogin(formLoginSpec -> formLoginSpec.loginPage("/login"))
                 .logout(this::setupLogout)
                 .build();
     }
