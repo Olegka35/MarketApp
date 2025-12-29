@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.result.view.Rendering;
@@ -31,7 +32,8 @@ public class OfferingController {
     public Mono<Rendering> loadMainOfferingsPage(@RequestParam(defaultValue = "") String search,
                                                  @RequestParam(defaultValue = "NO") SortType sort,
                                                  @RequestParam(defaultValue = "1") @Positive int pageNumber,
-                                                 @RequestParam(defaultValue = "5") @Positive int pageSize) {
+                                                 @RequestParam(defaultValue = "5") @Positive int pageSize,
+                                                 Authentication authentication) {
         return offeringService.getOfferings(search, sort, pageNumber, pageSize)
                 .map(page ->
                         Rendering.view("items")
@@ -44,6 +46,7 @@ public class OfferingController {
                                 ))
                                 .modelAttribute("search", search)
                                 .modelAttribute("sort", sort.name())
+                                .modelAttribute("isAdmin", isAdmin(authentication))
                                 .build());
     }
 
@@ -85,5 +88,11 @@ public class OfferingController {
             list.getLast().add(dummyOffering);
         }
         return list;
+    }
+
+    boolean isAdmin(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities()
+                .stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

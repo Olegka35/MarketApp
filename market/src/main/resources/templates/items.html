@@ -18,7 +18,7 @@
                     <h2>
                         <span class="badge text-bg-success">Витрина магазина</span>
                     </h2>
-                    <a th:if="${#authentication != null && #sets.contains(#authentication.getAuthorities(), 'ROLE_ADMIN')}" href="/items/new" class="btn btn-secondary ms-auto bi bi-plus-circle"> Новый товар</a>
+                    <a th:if="${isAdmin}" href="/items/new" class="btn btn-secondary ms-auto bi bi-plus-circle"> Новый товар</a>
                     <a sec:authorize="isAuthenticated()" href="/orders" class="btn btn-secondary bi bi-file-earmark-text ms-auto"> Заказы</a>
                     <a sec:authorize="isAuthenticated()" href="/cart/items" class="btn btn-secondary bi bi-cart4"> Корзина</a>
                     <a sec:authorize="isAuthenticated()"
