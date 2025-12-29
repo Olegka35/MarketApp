@@ -110,19 +110,19 @@ public class CartServiceTest {
     @Test
     public void deleteCartItemTest() {
         long id = 1L;
-        when(cartRepository.existsByOfferingId(id)).thenReturn(Mono.just(true));
-        when(cartRepository.deleteByOfferingId(id)).thenReturn(Mono.empty().then());
+        when(cartRepository.existsByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.just(true));
+        when(cartRepository.deleteByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.empty().then());
 
         cartService.deleteCartItem(id).block();
 
-        verify(cartRepository).deleteByOfferingId(id);
+        verify(cartRepository).deleteByOfferingIdAndUserId(id, 1L);
     }
 
     @Test
     public void deleteCartItemTest_itemNotFoundInCart() {
         long id = 1L;
-        when(cartRepository.existsByOfferingId(id)).thenReturn(Mono.just(false));
-        when(cartRepository.deleteByOfferingId(id)).thenReturn(Mono.empty().then());
+        when(cartRepository.existsByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.just(false));
+        when(cartRepository.deleteByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.empty().then());
 
         assertThrows(NoSuchElementException.class, () -> cartService.deleteCartItem(id).block());
     }
@@ -131,7 +131,7 @@ public class CartServiceTest {
     public void addOneCartItemTest_existsInCart() {
         long id = 5L;
         CartItem cartItem = new CartItem(id, 1, 1L);
-        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
+        when(cartRepository.findByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.just(cartItem));
         when(offeringRepository.existsById(id)).thenReturn(Mono.just(true));
         when(cartRepository.save(any(CartItem.class)))
                 .thenAnswer(i -> Mono.just(i.getArgument(0)));
@@ -146,7 +146,7 @@ public class CartServiceTest {
     @Test
     public void addOneCartItemTest_firstInCart() {
         long id = 5L;
-        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.empty());
+        when(cartRepository.findByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.empty());
         when(offeringRepository.existsById(id)).thenReturn(Mono.just(true));
         when(cartRepository.save(any(CartItem.class)))
                 .thenAnswer(i -> Mono.just(i.getArgument(0)));
@@ -159,7 +159,7 @@ public class CartServiceTest {
     @Test
     public void addOneCartItemTest_incorrectOfferingId() {
         long id = 5L;
-        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.empty());
+        when(cartRepository.findByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.empty());
         when(offeringRepository.existsById(id)).thenReturn(Mono.just(false));
 
         assertThrows(NoSuchElementException.class, () -> cartService.addOneCartItem(id).block());
@@ -169,7 +169,7 @@ public class CartServiceTest {
     public void removeOneCartItemTest_notLastInCart() {
         long id = 5L;
         CartItem cartItem = new CartItem(id, 3, 1L);
-        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
+        when(cartRepository.findByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.just(cartItem));
         when(cartRepository.save(any(CartItem.class)))
                 .thenAnswer(i -> Mono.just(i.getArgument(0)));
 
@@ -184,7 +184,7 @@ public class CartServiceTest {
     public void removeOneCartItemTest_lastInCart() {
         long id = 5L;
         CartItem cartItem = new CartItem(id, 1, 1L);
-        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
+        when(cartRepository.findByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.just(cartItem));
         when(cartRepository.delete(cartItem)).thenReturn(Mono.empty().then());
 
         cartService.removeOneCartItem(id).block();
@@ -195,7 +195,7 @@ public class CartServiceTest {
     @Test
     public void removeOneCartItemTest_notExistsInCart() {
         long id = 5L;
-        when(cartRepository.findByOfferingId(id)).thenReturn(Mono.empty());
+        when(cartRepository.findByOfferingIdAndUserId(id, 1L)).thenReturn(Mono.empty());
 
         assertThrows(NoSuchElementException.class, () -> cartService.removeOneCartItem(id).block());
     }

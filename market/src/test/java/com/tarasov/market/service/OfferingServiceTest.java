@@ -243,7 +243,7 @@ public class OfferingServiceTest {
                 BigDecimal.valueOf(500));
 
         when(offeringCacheRepository.findByOfferingId(anyLong())).thenReturn(Mono.just(mockOffering));
-        when(cartRepository.findByOfferingId(anyLong())).thenReturn(Mono.empty());
+        when(cartRepository.findByOfferingIdAndUserId(anyLong(), anyLong())).thenReturn(Mono.empty());
         when(offeringRepository.findByIdWithCart(ID)).thenReturn(Mono.empty());
 
         OfferingDto offeringDto = offeringService.getOffering(ID).block();
@@ -267,7 +267,7 @@ public class OfferingServiceTest {
                 BigDecimal.valueOf(500));
 
         when(offeringCacheRepository.findByOfferingId(ID)).thenReturn(Mono.just(mockOffering));
-        when(cartRepository.findByOfferingId(ID)).thenReturn(Mono.just(new CartItem(ID, 5, 1L)));
+        when(cartRepository.findByOfferingIdAndUserId(ID, 1L)).thenReturn(Mono.just(new CartItem(ID, 5, 1L)));
         when(offeringRepository.findByIdWithCart(ID)).thenReturn(Mono.empty());
 
         OfferingDto offeringDto = offeringService.getOffering(ID).block();
@@ -291,7 +291,7 @@ public class OfferingServiceTest {
                                 new OfferingCache(4L, "Laptop", "Lenovo Legion 5 Pro", "legion.img", BigDecimal.valueOf(500))
                         )
                 )));
-        when(cartRepository.findByOfferingIdIn(List.of(2L, 4L)))
+        when(cartRepository.findByOfferingIdInAndUserId(List.of(2L, 4L), 1L))
                 .thenReturn(Flux.just(new CartItem(4L, 5, 1L)));
         when(offeringRepository.findOfferings(pageRequest, "")).thenReturn(Flux.empty());
         when(offeringRepository.count()).thenReturn(Mono.empty());
