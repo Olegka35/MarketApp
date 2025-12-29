@@ -17,6 +17,7 @@ import com.tarasov.market.service.OfferingService;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -57,6 +58,7 @@ public class OfferingServiceImpl implements OfferingService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<Long> createOffering(String title, String description, BigDecimal price, FilePart image) {
         Offering offering = new Offering(title, description, image.filename(), price);
         return offeringRepository.save(offering)

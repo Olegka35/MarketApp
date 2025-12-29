@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
 
 <head>
     <meta charset="utf-8">
@@ -16,15 +16,25 @@
                     <h2>
                         <span class="badge text-bg-success">Витрина магазина</span>
                     </h2>
-                    <a href="/orders" class="btn btn-secondary ms-auto bi bi-file-earmark-text"> Заказы</a>
+                    <a sec:authorize="isAuthenticated()" href="/orders" class="btn btn-secondary ms-auto bi bi-file-earmark-text"> Заказы</a>
                     <a href="/items" class="btn btn-secondary bi bi-arrow-left-square"> Главная</a>
+                    <a sec:authorize="isAuthenticated()"
+                       href="/logout"
+                       class="btn btn btn-outline-danger bi bi-box-arrow-left"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="top"
+                       title="Выход из системы"
+                       th:text="' ' + ${#authentication.name}">
+                        Имя пользователя
+                    </a>
+                    <a th:if="${#authentication == null || !#authentication.isAuthenticated()}" href="/login" class="btn btn-outline-success bi bi-box-arrow-in-right ms-auto"> Войти</a>
                 </div>
             </div>
         </div>
         <div class="row p-2" th:each="item : ${items}">
             <div class="col">
                 <div class="card">
-                    <img class="p-2" th:src="${'/'+item.imgPath()}" alt="Нет изображения" width="300" height="300">
+                    <img class="p-2" th:src="${'/image/'+item.imgPath()}" alt="Нет изображения" width="300" height="300">
                     <div class="card-body">
                         <h5 class="card-title" th:text="${item.title()}"></h5>
                         <h5>
