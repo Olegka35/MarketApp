@@ -17,13 +17,13 @@ public class CartRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void findAllCartItemsTest() {
-        assertThat(cartRepository.findAllWithOffering().collectList().block())
+        assertThat(cartRepository.findAllWithOffering(1L).collectList().block())
                 .hasSize(2);
     }
 
     @Test
     public void findCartItemByOfferingIdTest() {
-        CartItem item = cartRepository.findByOfferingId(2L).block();
+        CartItem item = cartRepository.findByOfferingIdAndUserId(2L, 1L).block();
         assertNotNull(item);
         assertEquals(2L, item.getOfferingId());
     }
@@ -52,7 +52,7 @@ public class CartRepositoryTest extends BaseRepositoryTest {
     @ResetDB
     public void addCartItemTest() {
         Long offeringId = 1L;
-        CartItem cartItem = new CartItem(offeringId, 1);
+        CartItem cartItem = new CartItem(offeringId, 1, 1L);
         CartItem createdCartItem = cartRepository.save(cartItem).block();
         assertNotNull(createdCartItem);
         assertEquals(offeringId, createdCartItem.getOfferingId());

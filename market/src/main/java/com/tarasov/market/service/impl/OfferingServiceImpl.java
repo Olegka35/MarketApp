@@ -84,7 +84,7 @@ public class OfferingServiceImpl implements OfferingService {
     private Mono<OfferingDto> loadOfferingFromCache(Long offeringId) {
         return offeringCacheRepository.findByOfferingId(offeringId)
                 .flatMap(offeringCache ->
-                        cartRepository.findByOfferingId(offeringId)
+                        cartRepository.findByOfferingIdAndUserId(offeringId, 1L)
                                 .map(CartItem::getAmount)
                                 .switchIfEmpty(Mono.just(0))
                                 .map(amount -> collectOfferingDto(offeringCache, amount))
@@ -125,7 +125,7 @@ public class OfferingServiceImpl implements OfferingService {
         return offeringCacheRepository.findOfferingPage(search, sortType, pageNumber, pageSize)
                 .flatMap(cachedPage -> {
                     List<Long> offeringIds = cachedPage.offerings().stream().map(OfferingCache::id).toList();
-                    return cartRepository.findByOfferingIdIn(offeringIds)
+                    return cartRepository.findByOfferingIdInAndUserId(offeringIds, 1L)
                             .collectMap(CartItem::getOfferingId, CartItem::getAmount)
                             .map(cartInfo -> collectOfferingPage(cachedPage, cartInfo));
                 });

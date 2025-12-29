@@ -51,7 +51,7 @@ public class CartServiceTest {
                 "Test", "Test", "test.png", BigDecimal.valueOf(200),
                 11L, 4);
 
-        when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1, item2));
+        when(cartRepository.findAllWithOffering(1L)).thenReturn(Flux.just(item1, item2));
         when(paymentService.getAccountBalance()).thenReturn(Mono.just(BigDecimal.valueOf(10000)));
 
         CartResponse cart = cartService.getCartItems().block();
@@ -71,7 +71,7 @@ public class CartServiceTest {
                 "Test", "Test description", "test.png", BigDecimal.valueOf(100),
                 10L, 1);
 
-        when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1));
+        when(cartRepository.findAllWithOffering(1L)).thenReturn(Flux.just(item1));
         when(paymentService.getAccountBalance()).thenReturn(Mono.just(BigDecimal.valueOf(5)));
 
         CartResponse cart = cartService.getCartItems().block();
@@ -92,7 +92,7 @@ public class CartServiceTest {
                 "Test", "Test description", "test.png", BigDecimal.valueOf(100),
                 10L, 1);
 
-        when(cartRepository.findAllWithOffering()).thenReturn(Flux.just(item1));
+        when(cartRepository.findAllWithOffering(1L)).thenReturn(Flux.just(item1));
         when(paymentService.getAccountBalance()).thenReturn(Mono.error(new ConnectException()));
 
         CartResponse cart = cartService.getCartItems().block();
@@ -130,7 +130,7 @@ public class CartServiceTest {
     @Test
     public void addOneCartItemTest_existsInCart() {
         long id = 5L;
-        CartItem cartItem = new CartItem(id, 1);
+        CartItem cartItem = new CartItem(id, 1, 1L);
         when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
         when(offeringRepository.existsById(id)).thenReturn(Mono.just(true));
         when(cartRepository.save(any(CartItem.class)))
@@ -153,7 +153,7 @@ public class CartServiceTest {
 
         cartService.addOneCartItem(id).block();
 
-        verify(cartRepository).save(new CartItem(id, 1));
+        verify(cartRepository).save(new CartItem(id, 1, 1L));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class CartServiceTest {
     @Test
     public void removeOneCartItemTest_notLastInCart() {
         long id = 5L;
-        CartItem cartItem = new CartItem(id, 3);
+        CartItem cartItem = new CartItem(id, 3, 1L);
         when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
         when(cartRepository.save(any(CartItem.class)))
                 .thenAnswer(i -> Mono.just(i.getArgument(0)));
@@ -183,7 +183,7 @@ public class CartServiceTest {
     @Test
     public void removeOneCartItemTest_lastInCart() {
         long id = 5L;
-        CartItem cartItem = new CartItem(id, 1);
+        CartItem cartItem = new CartItem(id, 1, 1L);
         when(cartRepository.findByOfferingId(id)).thenReturn(Mono.just(cartItem));
         when(cartRepository.delete(cartItem)).thenReturn(Mono.empty().then());
 

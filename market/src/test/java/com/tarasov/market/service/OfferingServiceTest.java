@@ -267,7 +267,7 @@ public class OfferingServiceTest {
                 BigDecimal.valueOf(500));
 
         when(offeringCacheRepository.findByOfferingId(ID)).thenReturn(Mono.just(mockOffering));
-        when(cartRepository.findByOfferingId(ID)).thenReturn(Mono.just(new CartItem(ID, 5)));
+        when(cartRepository.findByOfferingId(ID)).thenReturn(Mono.just(new CartItem(ID, 5, 1L)));
         when(offeringRepository.findByIdWithCart(ID)).thenReturn(Mono.empty());
 
         OfferingDto offeringDto = offeringService.getOffering(ID).block();
@@ -292,7 +292,7 @@ public class OfferingServiceTest {
                         )
                 )));
         when(cartRepository.findByOfferingIdIn(List.of(2L, 4L)))
-                .thenReturn(Flux.just(new CartItem(4L, 5)));
+                .thenReturn(Flux.just(new CartItem(4L, 5, 1L)));
         when(offeringRepository.findOfferings(pageRequest, "")).thenReturn(Flux.empty());
         when(offeringRepository.count()).thenReturn(Mono.empty());
 

@@ -11,6 +11,7 @@ import com.tarasov.market.service.CartService;
 import com.tarasov.market.service.PaymentService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -33,7 +34,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public Mono<CartResponse> getCartItems() {
         return Mono.zip(
-                cartRepository.findAllWithOffering()
+                cartRepository.findAllWithOffering(1L)
                         .map(CartItemDto::from)
                         .collectList()
                         .map(cartItems ->
@@ -50,7 +51,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Mono<Void> addOneCartItem(Long offeringId) {
-        return cartRepository.findByOfferingId(offeringId)
+        return cartRepository.findByOfferingIdAndUserId(offeringId, 1L)
                 .flatMap(cartItem -> {
                     cartItem.setAmount(cartItem.getAmount() + 1);
                     return cartRepository.save(cartItem);
@@ -62,7 +63,7 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Mono<Void> removeOneCartItem(Long offeringId) {
-        return cartRepository.findByOfferingId(offeringId)
+        return cartRepository.findByOfferingIdAndUserId(offeringId, 1L)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
                 .flatMap(cartItem -> {
                     if (cartItem.getAmount() == 1) {
@@ -77,10 +78,10 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Mono<Void> deleteCartItem(Long offeringId) {
-        return cartRepository.existsByOfferingId(offeringId)
+        return cartRepository.existsByOfferingIdAndUserId(offeringId, 1L)
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
-                .then(cartRepository.deleteByOfferingId(offeringId));
+                .then(cartRepository.deleteByOfferingIdAndUserId(offeringId, 1L));
     }
 
     private BigDecimal calculateTotalPrice(List<CartItemDto> cartItems) {
@@ -108,7 +109,7 @@ public class CartServiceImpl implements CartService {
         return offeringRepository.existsById(offeringId)
                 .flatMap(exists -> {
                     if (exists) {
-                        CartItem newCartItem = new CartItem(offeringId, 1);
+                        CartItem newCartItem = new CartItem(offeringId, 1, 1L);
                         return cartRepository.save(newCartItem);
                     } else {
                         return Mono.error(new NoSuchElementException("Offering not found"));

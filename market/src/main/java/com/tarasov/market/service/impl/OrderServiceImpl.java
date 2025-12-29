@@ -51,7 +51,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Mono<OrderDto> createOrderFromCart() {
-        return cartRepository.findAllWithOffering()
+        return cartRepository.findAllWithOffering(1L)
                 .switchIfEmpty(Mono.error(new IllegalStateException("The cart is empty")))
                 .collectList()
                 .flatMap(this::processOrderCreation)

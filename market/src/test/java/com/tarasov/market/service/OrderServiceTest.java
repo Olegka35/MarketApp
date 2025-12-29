@@ -103,7 +103,7 @@ public class OrderServiceTest {
 
     @Test
     public void createOrderTest_emptyCart() {
-        when(cartRepository.findAllWithOffering()).thenReturn(Flux.empty());
+        when(cartRepository.findAllWithOffering(1L)).thenReturn(Flux.empty());
         assertThrows(IllegalStateException.class, () -> orderService.createOrderFromCart().block());
     }
 
@@ -117,7 +117,7 @@ public class OrderServiceTest {
                 "Test2", "Test2", "test2.png", BigDecimal.valueOf(200),
                 11L, 4);
 
-        when(cartRepository.findAllWithOffering())
+        when(cartRepository.findAllWithOffering(1L))
                 .thenReturn(Flux.just(item1, item2));
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {

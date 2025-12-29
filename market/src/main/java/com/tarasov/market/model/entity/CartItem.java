@@ -17,9 +17,11 @@ public class CartItem {
 
     private Long offeringId;
     private int amount;
+    private Long userId;
 
-    public CartItem(Long offeringId, int amount) {
+    public CartItem(Long offeringId, int amount, Long userId) {
         this.offeringId = offeringId;
         this.amount = amount;
+        this.userId = userId;
     }
 }
