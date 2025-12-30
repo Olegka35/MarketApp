@@ -19,8 +19,10 @@ services:
       - AUTH_SERVER_URL=http://authentication-server:8080
       - MARKET_APP_SECRET=${MARKET_APP_SECRET}
     depends_on:
-      - authentication-server
-      - redis-server
+      authentication-server:
+        condition: service_healthy
+      redis-server:
+        condition: service_started
 
   payment-service:
     build: ./payment-service
@@ -33,7 +35,8 @@ services:
       - DB_URL=${DB_URL}
       - AUTH_SERVER_URL=http://authentication-server:8080
     depends_on:
-      - authentication-server
+      authentication-server:
+        condition: service_healthy
 
   redis-server:
     container_name: redis-server
@@ -66,7 +69,15 @@ services:
       KC_DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "8082:8080"
+      - "9000:9000"
     depends_on:
       - postgres
     command:
       - start-dev
+      - --health-enabled=true
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f /tmp/HealthCheck.java ] || echo "public class HealthCheck { public static void main(String[] args) throws java.lang.Throwable { System.exit(java.net.HttpURLConnection.HTTP_OK == ((java.net.HttpURLConnection)new java.net.URL(args[0]).openConnection()).getResponseCode() ? 0 : 1); } }" > /tmp/HealthCheck.java && java /tmp/HealthCheck.java http://localhost:9000/health/live']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
