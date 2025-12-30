@@ -20,9 +20,9 @@ public class PaymentServiceImpl implements PaymentService {
     private final Long accountId;
 
     public PaymentServiceImpl(PaymentApi paymentApi,
-                              WebClient oauth2WebClient,
+                              WebClient webClient,
                               @Value("${payment.service.account-id}") Long accountId) {
-        ApiClient apiClient = new ApiClient(oauth2WebClient);
+        ApiClient apiClient = new ApiClient(webClient);
         if (System.getenv("PAYMENT_SERVICE_URL") != null) {
             apiClient.setBasePath(System.getenv("PAYMENT_SERVICE_URL"));
         }
