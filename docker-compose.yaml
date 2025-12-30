@@ -16,6 +16,11 @@ services:
       - PAYMENT_SERVICE_URL=http://payment-service:8080
       - SPRING_DATA_REDIS_HOST=redis-server
       - SPRING_DATA_REDIS_PORT=6379
+      - AUTH_SERVER_URL=http://authentication-server:8080
+      - MARKET_APP_SECRET=${MARKET_APP_SECRET}
+    depends_on:
+      - authentication-server
+      - redis-server
 
   payment-service:
     build: ./payment-service
@@ -26,6 +31,9 @@ services:
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_URL=${DB_URL}
+      - AUTH_SERVER_URL=http://authentication-server:8080
+    depends_on:
+      - authentication-server
 
   redis-server:
     container_name: redis-server

@@ -103,3 +103,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8082/realms/master/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8082/realms/master/protocol/openid-connect/token
+          scopes:
+            profile: Profile
+
+security:
+  - oauth2: [openid]

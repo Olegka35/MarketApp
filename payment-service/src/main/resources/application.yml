@@ -10,6 +10,11 @@ spring:
       max-idle-time: 30s
       max-life-time: 10m
       validation-query: SELECT 1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH_SERVER_URL}/realms/master
 
 logging:
   level:

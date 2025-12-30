@@ -1,12 +1,14 @@
 package com.tarasov.market.service.impl;
 
 
+import com.tarasov.market.ApiClient;
 import com.tarasov.market.api.PaymentApi;
 import com.tarasov.market.model.BalanceInfo;
 import com.tarasov.market.model.PaymentRequest;
 import com.tarasov.market.service.PaymentService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -18,10 +20,14 @@ public class PaymentServiceImpl implements PaymentService {
     private final Long accountId;
 
     public PaymentServiceImpl(PaymentApi paymentApi,
+                              WebClient oauth2WebClient,
                               @Value("${payment.service.account-id}") Long accountId) {
+        ApiClient apiClient = new ApiClient(oauth2WebClient);
         if (System.getenv("PAYMENT_SERVICE_URL") != null) {
-            paymentApi.getApiClient().setBasePath(System.getenv("PAYMENT_SERVICE_URL"));
+            apiClient.setBasePath(System.getenv("PAYMENT_SERVICE_URL"));
         }
+        paymentApi.setApiClient(apiClient);
+
         this.paymentApi = paymentApi;
         this.accountId = accountId;
     }
