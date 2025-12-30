@@ -1,9 +1,9 @@
 package com.tarasov.market.service.security;
 
+import com.tarasov.market.model.entity.ExtendedUserDetails;
 import com.tarasov.market.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -18,12 +18,12 @@ public class MarketUserDetailsService implements ReactiveUserDetailsService {
     @Override
     public Mono<UserDetails> findByUsername(String username) {
         return userRepository.findByUsername(username)
-                .map(user -> User.builder()
-                        .username(user.getUsername())
-                        .password(user.getPassword())
-                        .disabled(!user.isEnabled())
-                        .roles(user.isAdmin() ? "ADMIN" : "USER")
-                        .build())
+                .map(user -> new ExtendedUserDetails(user.getId(),
+                        user.getUsername(),
+                        user.getPassword(),
+                        user.isAdmin() ? "ADMIN" : "USER")
+                )
+                .cast(UserDetails.class)
                 .switchIfEmpty(Mono.error(new UsernameNotFoundException(username)));
     }
 }

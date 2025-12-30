@@ -27,7 +27,8 @@ public class SecurityConfig {
         return http
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/items/new").hasRole("ADMIN")
-                        .pathMatchers(HttpMethod.GET, "/login", "/logout", "/register", "/", "/items/**", "/image/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/login", "/logout", "/register",
+                                "/", "/items/**", "/image/**").permitAll()
                         .pathMatchers(HttpMethod.POST, "/register").permitAll()
                         .anyExchange().authenticated()
                 )
