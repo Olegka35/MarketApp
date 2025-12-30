@@ -9,6 +9,7 @@ import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.CartService;
 import com.tarasov.market.service.PaymentService;
+import com.tarasov.market.service.security.SecurityUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,39 +34,49 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public Mono<CartResponse> getCartItems() {
+        return SecurityUtils.getUserId()
+                .flatMap(this::getUserCartItems);
+    }
+
+    private Mono<CartResponse> getUserCartItems(Long userId) {
         return Mono.zip(
-                cartRepository.findAllWithOffering(1L)
+                cartRepository.findAllWithOffering(userId)
                         .map(CartItemDto::from)
                         .collectList()
                         .map(cartItems ->
                                 new CartResponse(cartItems, calculateTotalPrice(cartItems))),
-                paymentService.getAccountBalance()
+                paymentService.getAccountBalance(userId)
                         .map(Optional::of)
-                        .onErrorResume(error -> {
-                            log.error("Error during GetBalance request to Payment Service", error);
-                            return error instanceof WebClientResponseException.NotFound
-                                    ? Mono.just(Optional.of(BigDecimal.ZERO))
-                                    : Mono.just(Optional.empty());
-                        })
+                        .onErrorResume(this::processGetBalanceError)
         ).map(this::combineCartResponse);
     }
 
     @Override
     @Transactional
     public Mono<Void> addOneCartItem(Long offeringId) {
-        return cartRepository.findByOfferingIdAndUserId(offeringId, 1L)
+        return SecurityUtils.getUserId()
+                .flatMap(userId -> addOneCartItem(offeringId, userId));
+    }
+
+    private Mono<Void> addOneCartItem(Long offeringId, Long userId) {
+        return cartRepository.findByOfferingIdAndUserId(offeringId, userId)
                 .flatMap(cartItem -> {
                     cartItem.setAmount(cartItem.getAmount() + 1);
                     return cartRepository.save(cartItem);
                 })
-                .switchIfEmpty(createCartItem(offeringId))
+                .switchIfEmpty(createCartItem(offeringId, userId))
                 .then();
     }
 
     @Override
     @Transactional
     public Mono<Void> removeOneCartItem(Long offeringId) {
-        return cartRepository.findByOfferingIdAndUserId(offeringId, 1L)
+        return SecurityUtils.getUserId()
+                .flatMap(userId -> removeOneCartItem(offeringId, userId));
+    }
+
+    private Mono<Void> removeOneCartItem(Long offeringId, Long userId) {
+        return cartRepository.findByOfferingIdAndUserId(offeringId, userId)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
                 .flatMap(cartItem -> {
                     if (cartItem.getAmount() == 1) {
@@ -80,10 +91,15 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public Mono<Void> deleteCartItem(Long offeringId) {
-        return cartRepository.existsByOfferingIdAndUserId(offeringId, 1L)
+        return SecurityUtils.getUserId()
+                .flatMap(userId -> deleteCartItem(offeringId, userId));
+    }
+
+    private Mono<Void> deleteCartItem(Long offeringId, Long userId) {
+        return cartRepository.existsByOfferingIdAndUserId(offeringId, userId)
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Cart Item not found")))
-                .then(cartRepository.deleteByOfferingIdAndUserId(offeringId, 1L));
+                .then(cartRepository.deleteByOfferingIdAndUserId(offeringId, userId));
     }
 
     private BigDecimal calculateTotalPrice(List<CartItemDto> cartItems) {
@@ -107,15 +123,22 @@ public class CartServiceImpl implements CartService {
         return cartResponse;
     }
 
-    private Mono<CartItem> createCartItem(Long offeringId) {
+    private Mono<CartItem> createCartItem(Long offeringId, Long userId) {
         return offeringRepository.existsById(offeringId)
                 .flatMap(exists -> {
                     if (exists) {
-                        CartItem newCartItem = new CartItem(offeringId, 1, 1L);
+                        CartItem newCartItem = new CartItem(offeringId, 1, userId);
                         return cartRepository.save(newCartItem);
                     } else {
                         return Mono.error(new NoSuchElementException("Offering not found"));
                     }
                 });
+    }
+
+    private Mono<Optional<BigDecimal>> processGetBalanceError(Throwable error) {
+        log.error("Error during GetBalance request to Payment Service", error);
+        return error instanceof WebClientResponseException.NotFound
+                ? Mono.just(Optional.of(BigDecimal.ZERO))
+                : Mono.just(Optional.empty());
     }
 }

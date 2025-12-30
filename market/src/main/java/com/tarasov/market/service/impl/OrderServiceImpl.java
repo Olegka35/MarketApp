@@ -11,6 +11,7 @@ import com.tarasov.market.repository.OrderItemRepository;
 import com.tarasov.market.repository.OrderRepository;
 import com.tarasov.market.service.OrderService;
 import com.tarasov.market.service.PaymentService;
+import com.tarasov.market.service.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,16 +34,26 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Flux<OrderDto> getOrders() {
-        return orderRepository.findAllWithItems()
+        return SecurityUtils.getUserId()
+                .flatMapMany(this::getOrders);
+    }
+
+    private Flux<OrderDto> getOrders(Long userId) {
+        return orderRepository.findAllWithItems(userId)
                 .groupBy(OrderWithItem::id)
                 .flatMap(orderGroup ->
-                    orderGroup.collectList().map(OrderDto::from)
+                        orderGroup.collectList().map(OrderDto::from)
                 );
     }
 
     @Override
     public Mono<OrderDto> getOrderById(Long id) {
-        return orderRepository.findByIdWithItems(id)
+        return SecurityUtils.getUserId()
+                .flatMap(userId -> getOrderById(id, userId));
+    }
+
+    private Mono<OrderDto> getOrderById(Long id, Long userId) {
+        return orderRepository.findByIdWithItems(id, userId)
                 .collectList()
                 .map(OrderDto::from)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Order not found")));
@@ -51,18 +62,24 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Mono<OrderDto> createOrderFromCart() {
-        return cartRepository.findAllWithOffering(1L)
-                .switchIfEmpty(Mono.error(new IllegalStateException("The cart is empty")))
-                .collectList()
-                .flatMap(this::processOrderCreation)
-                .flatMap(this::getOrderById)
-                .flatMap(this::processPayment);
+        return SecurityUtils.getUserId()
+                .flatMap(this::createOrderFromCart);
     }
 
-    private Mono<Order> createAndSaveOrder(List<OfferingWithCartItem> cartItems) {
+    private Mono<OrderDto> createOrderFromCart(Long userId) {
+        return cartRepository.findAllWithOffering(userId)
+                .switchIfEmpty(Mono.error(new IllegalStateException("The cart is empty")))
+                .collectList()
+                .flatMap(cartItems -> processOrderCreation(cartItems, userId))
+                .flatMap(this::getOrderById)
+                .flatMap(orderDto -> processPayment(userId, orderDto));
+    }
+
+    private Mono<Order> createAndSaveOrder(List<OfferingWithCartItem> cartItems, Long userId) {
         Order order = new Order();
         BigDecimal totalPrice = calculateTotalPrice(cartItems);
         order.setTotalPrice(totalPrice);
+        order.setUserId(userId);
         return orderRepository.save(order);
     }
 
@@ -93,14 +110,15 @@ public class OrderServiceImpl implements OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private Mono<Long> processOrderCreation(List<OfferingWithCartItem> cartItems) {
-        return createAndSaveOrder(cartItems)
+    private Mono<Long> processOrderCreation(List<OfferingWithCartItem> cartItems, Long userId) {
+        return createAndSaveOrder(cartItems, userId)
                 .flatMap(order -> saveOrderItems(order, cartItems))
-                .flatMap(order -> cartRepository.deleteAll().thenReturn(order.getId()));
+                .flatMap(order -> cartRepository.deleteByUserId(userId)
+                        .thenReturn(order.getId()));
     }
 
-    private Mono<OrderDto> processPayment(OrderDto order) {
-        return paymentService.makePayment(order.totalSum())
+    private Mono<OrderDto> processPayment(Long userId, OrderDto order) {
+        return paymentService.makePayment(userId, order.totalSum())
                 .onErrorMap(e -> new PaymentException())
                 .then(Mono.just(order));
     }

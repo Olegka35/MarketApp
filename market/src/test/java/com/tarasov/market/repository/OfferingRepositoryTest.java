@@ -99,7 +99,7 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getOfferingFromCartTest() {
-        OfferingWithCartItem offering = offeringRepository.findByIdWithCart(2L).block();
+        OfferingWithCartItem offering = offeringRepository.findByIdWithCart(2L, 1L).block();
 
         assertNotNull(offering);
         assertEquals(2L, offering.offeringId());
@@ -109,7 +109,7 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getOfferingNotInCartTest() {
-        OfferingWithCartItem offering = offeringRepository.findByIdWithCart(3L).block();
+        OfferingWithCartItem offering = offeringRepository.findByIdWithCart(3L, 1L).block();
 
         assertNotNull(offering);
         assertEquals(3L, offering.offeringId());
@@ -119,7 +119,7 @@ public class OfferingRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getNonExistingOfferingTest() {
-        assertNull(offeringRepository.findByIdWithCart(400L).block());
+        assertNull(offeringRepository.findByIdWithCart(400L, 1L).block());
     }
 
     @Test

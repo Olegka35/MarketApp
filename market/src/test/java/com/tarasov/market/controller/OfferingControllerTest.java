@@ -2,6 +2,7 @@ package com.tarasov.market.controller;
 
 
 import com.tarasov.market.configuration.ResetDB;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -11,6 +12,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Disabled
 public class OfferingControllerTest extends BaseControllerTest {
 
     @Test

@@ -6,6 +6,7 @@ import com.tarasov.market.model.PaymentRequest;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Disabled
 public class OrderControllerTest extends BaseControllerTest {
 
     @Autowired

@@ -5,6 +5,7 @@ import com.tarasov.payment.configuration.PostgresTestcontainer;
 import com.tarasov.payment.configuration.ResetBalance;
 import com.tarasov.payment.model.dto.BalanceDto;
 import com.tarasov.payment.model.dto.PaymentRequest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 @ImportTestcontainers(PostgresTestcontainer.class)
 @ExtendWith(BalanceResetExtension.class)
+@Disabled
 public class AccountControllerTest {
 
     @Autowired

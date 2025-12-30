@@ -6,7 +6,6 @@ import com.tarasov.market.api.PaymentApi;
 import com.tarasov.market.model.BalanceInfo;
 import com.tarasov.market.model.PaymentRequest;
 import com.tarasov.market.service.PaymentService;
-import com.tarasov.market.service.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -29,19 +28,15 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public Mono<BigDecimal> getAccountBalance() {
-        return SecurityUtils.getUserId()
-                .flatMap(accountId ->
-                        paymentApi.getAccountById(accountId)
-                                .map(BalanceInfo::getBalance));
+    public Mono<BigDecimal> getAccountBalance(Long accountId) {
+        return paymentApi.getAccountById(accountId)
+                .map(BalanceInfo::getBalance);
     }
 
     @Override
-    public Mono<BigDecimal> makePayment(BigDecimal amount) {
+    public Mono<BigDecimal> makePayment(Long accountId, BigDecimal amount) {
         PaymentRequest paymentRequest = new PaymentRequest().amount(amount);
-        return SecurityUtils.getUserId()
-                .flatMap(accountId ->
-                        paymentApi.makePayment(accountId, paymentRequest)
-                                .map(BalanceInfo::getBalance));
+        return paymentApi.makePayment(accountId, paymentRequest)
+                .map(BalanceInfo::getBalance);
     }
 }
