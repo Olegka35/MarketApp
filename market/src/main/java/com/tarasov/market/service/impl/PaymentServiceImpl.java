@@ -6,7 +6,7 @@ import com.tarasov.market.api.PaymentApi;
 import com.tarasov.market.model.BalanceInfo;
 import com.tarasov.market.model.PaymentRequest;
 import com.tarasov.market.service.PaymentService;
-import org.springframework.beans.factory.annotation.Value;
+import com.tarasov.market.service.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -17,31 +17,31 @@ import java.math.BigDecimal;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentApi paymentApi;
-    private final Long accountId;
 
     public PaymentServiceImpl(PaymentApi paymentApi,
-                              WebClient webClient,
-                              @Value("${payment.service.account-id}") Long accountId) {
+                              WebClient webClient) {
         ApiClient apiClient = new ApiClient(webClient);
         if (System.getenv("PAYMENT_SERVICE_URL") != null) {
             apiClient.setBasePath(System.getenv("PAYMENT_SERVICE_URL"));
         }
         paymentApi.setApiClient(apiClient);
-
         this.paymentApi = paymentApi;
-        this.accountId = accountId;
     }
 
     @Override
     public Mono<BigDecimal> getAccountBalance() {
-        return paymentApi.getAccountById(accountId)
-                .map(BalanceInfo::getBalance);
+        return SecurityUtils.getUserId()
+                .flatMap(accountId ->
+                        paymentApi.getAccountById(accountId)
+                                .map(BalanceInfo::getBalance));
     }
 
     @Override
     public Mono<BigDecimal> makePayment(BigDecimal amount) {
         PaymentRequest paymentRequest = new PaymentRequest().amount(amount);
-        return paymentApi.makePayment(accountId, paymentRequest)
-                .map(BalanceInfo::getBalance);
+        return SecurityUtils.getUserId()
+                .flatMap(accountId ->
+                        paymentApi.makePayment(accountId, paymentRequest)
+                                .map(BalanceInfo::getBalance));
     }
 }

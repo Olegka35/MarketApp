@@ -11,9 +11,9 @@ import com.tarasov.market.service.CartService;
 import com.tarasov.market.service.PaymentService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
@@ -43,7 +43,9 @@ public class CartServiceImpl implements CartService {
                         .map(Optional::of)
                         .onErrorResume(error -> {
                             log.error("Error during GetBalance request to Payment Service", error);
-                            return Mono.just(Optional.empty());
+                            return error instanceof WebClientResponseException.NotFound
+                                    ? Mono.just(Optional.of(BigDecimal.ZERO))
+                                    : Mono.just(Optional.empty());
                         })
         ).map(this::combineCartResponse);
     }
