@@ -22,7 +22,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/actuator/**").permitAll()
-                        .pathMatchers("/account/**").hasAuthority("balance_access")
+                        .pathMatchers("/account/**").hasAuthority("ACCOUNT")
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(spec -> spec

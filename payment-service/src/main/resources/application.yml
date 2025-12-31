@@ -14,7 +14,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH_SERVER_URL}/realms/master
+          issuer-uri: ${AUTH_SERVER_URL}/realms/marketplace
 
 logging:
   level:
