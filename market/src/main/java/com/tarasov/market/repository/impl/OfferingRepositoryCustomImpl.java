@@ -71,7 +71,7 @@ public class OfferingRepositoryCustomImpl implements OfferingRepositoryCustom {
         }
         if (userId != null) {
             queryParams.put("user_id", userId);
-        };
+        }
         return queryParams;
     }
 }

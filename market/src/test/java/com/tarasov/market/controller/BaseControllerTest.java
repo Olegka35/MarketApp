@@ -6,7 +6,7 @@ import com.tarasov.market.configuration.DatabaseResetExtension;
 import com.tarasov.market.configuration.PostgresTestcontainer;
 import com.tarasov.market.configuration.RedisTestcontainer;
 import com.tarasov.market.configuration.WebClientConfiguration;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -25,7 +26,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ImportTestcontainers( { PostgresTestcontainer.class, RedisTestcontainer.class } )
 @ExtendWith(DatabaseResetExtension.class)
 @Import({WebClientConfiguration.class})
-@Disabled
 public class BaseControllerTest {
 
     @Autowired
@@ -33,6 +33,12 @@ public class BaseControllerTest {
 
     @Mock
     PaymentApi paymentApi;
+
+    @BeforeEach
+    public void setup() {
+        webTestClient = webTestClient
+                .mutateWith(SecurityMockServerConfigurers.csrf());
+    }
 
     @Test
     public void contextLoads() {

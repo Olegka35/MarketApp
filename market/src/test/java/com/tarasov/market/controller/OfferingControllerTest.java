@@ -2,7 +2,7 @@ package com.tarasov.market.controller;
 
 
 import com.tarasov.market.configuration.ResetDB;
-import org.junit.jupiter.api.Disabled;
+import com.tarasov.market.model.TestUserContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -12,12 +12,13 @@ import org.springframework.web.reactive.function.BodyInserters;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled
+
 public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void searchOfferingsTest() {
-        webTestClient.get().uri("/items")
+        webTestClient.get()
+                .uri("/items")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -36,7 +37,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void searchOfferingsWithFilterTest() {
-        webTestClient.get().uri("/items?search=+и+")
+        webTestClient.get()
+                .uri("/items?search=+и+")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -56,7 +58,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void searchOfferingsWithSortingAndPaginationTest() {
-        webTestClient.get().uri("/items?sort=PRICE&pageNumber=1&pageSize=3")
+        webTestClient.get()
+                .uri("/items?sort=PRICE&pageNumber=1&pageSize=3")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -72,7 +75,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void searchOfferingsWithSortingAndPaginationTest_2page() {
-        webTestClient.get().uri("/items?sort=PRICE&pageNumber=2&pageSize=3")
+        webTestClient.get()
+                .uri("/items?sort=PRICE&pageNumber=2&pageSize=3")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -87,7 +91,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void searchOfferingsTest_noResults() {
-        webTestClient.get().uri("/items?search=INCORRECT_SEARCH")
+        webTestClient.get()
+                .uri("/items?search=INCORRECT_SEARCH")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -117,7 +122,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void getOfferingByIdTest_addedToCart() {
-        webTestClient.get().uri("/items/2")
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
+                .uri("/items/2")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -134,7 +140,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void getOfferingByIdTest_notInCart() {
-        webTestClient.get().uri("/items/3")
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
+                .uri("/items/3")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
@@ -151,7 +158,8 @@ public class OfferingControllerTest extends BaseControllerTest {
 
     @Test
     public void getOfferingByIdTest_nonExistingOffering() {
-        webTestClient.get().uri("/items/300")
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
+                .uri("/items/300")
                 .exchange()
                 .expectStatus().isNotFound();
     }
@@ -166,11 +174,46 @@ public class OfferingControllerTest extends BaseControllerTest {
         builder.part("image", "Test image content".getBytes())
                 .header("Content-Disposition", "form-data; name=image; filename=NewBalance.jpg");
 
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockAdmin()).post()
                 .uri("/items/new")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(builder.build()))
                 .exchange()
                 .expectStatus().is3xxRedirection();
+    }
+
+    @Test
+    public void getOfferingByIdTest_unauthorized() {
+        webTestClient.get()
+                .uri("/items/2")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .value(html -> {
+                    assertNotNull(html);
+                    assertTrue(html.contains("Беспроводная мышь"));
+                    assertTrue(html.contains("Эргономичная мышь с Bluetooth-подключением и регулируемым DPI"));
+                    assertTrue(html.contains("/wireless_mouse.jpg"));
+                    assertTrue(html.contains("990 руб."));
+                    assertTrue(html.contains("<span>0</span>"));
+                });
+    }
+
+    @Test
+    @ResetDB
+    public void createNewOfferingTest_notAdmin() {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("title", "test");
+        builder.part("description", "test description");
+        builder.part("price", "1000");
+        builder.part("image", "Test image content".getBytes())
+                .header("Content-Disposition", "form-data; name=image; filename=NewBalance.jpg");
+
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
+                .uri("/items/new")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(builder.build()))
+                .exchange()
+                .expectStatus().isForbidden();
     }
 }

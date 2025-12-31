@@ -2,12 +2,14 @@ package com.tarasov.market.controller;
 
 import com.tarasov.market.configuration.ResetDB;
 import com.tarasov.market.model.BalanceInfo;
+import com.tarasov.market.model.TestUserContext;
 import com.tarasov.market.service.PaymentService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 
@@ -20,7 +22,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-@Disabled
+
 class CartControllerTest extends BaseControllerTest {
 
     @Autowired
@@ -37,7 +39,7 @@ class CartControllerTest extends BaseControllerTest {
 
     @Test
     public void getCartItemsTest() {
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -60,7 +62,7 @@ class CartControllerTest extends BaseControllerTest {
         when(paymentApi.getAccountById(1L))
                 .thenReturn(Mono.just(new BalanceInfo().balance(BigDecimal.valueOf(5))));
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -82,7 +84,7 @@ class CartControllerTest extends BaseControllerTest {
         when(paymentApi.getAccountById(1L))
                 .thenReturn(Mono.error(new ConnectException()));
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -102,7 +104,7 @@ class CartControllerTest extends BaseControllerTest {
     @Test
     @ResetDB
     public void addCartItemFromCartPageTest() {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", "1")
                         .queryParam("action", "PLUS")
@@ -112,7 +114,7 @@ class CartControllerTest extends BaseControllerTest {
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/cart/items");
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -130,7 +132,7 @@ class CartControllerTest extends BaseControllerTest {
     @Test
     @ResetDB
     public void removeCartItemFromCartPageTest() {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", "2")
                         .queryParam("action", "MINUS")
@@ -140,7 +142,7 @@ class CartControllerTest extends BaseControllerTest {
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/cart/items");
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -158,7 +160,7 @@ class CartControllerTest extends BaseControllerTest {
     @Test
     @ResetDB
     public void removeCartItemToZeroFromCartPageTest() {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", "5")
                         .queryParam("action", "MINUS")
@@ -168,7 +170,7 @@ class CartControllerTest extends BaseControllerTest {
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/cart/items");
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -184,7 +186,7 @@ class CartControllerTest extends BaseControllerTest {
     @Test
     @ResetDB
     public void deleteCartItemFromCartPageTest() {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", "2")
                         .queryParam("action", "DELETE")
@@ -194,7 +196,7 @@ class CartControllerTest extends BaseControllerTest {
                 .expectStatus().is3xxRedirection()
                 .expectHeader().valueEquals("Location", "/cart/items");
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/cart/items")
                 .exchange()
                 .expectStatus().isOk()
@@ -210,7 +212,7 @@ class CartControllerTest extends BaseControllerTest {
     @Test
     @ResetDB
     public void deleteCartItemFromCartPageTest_notExistInCart() {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", "1")
                         .queryParam("action", "DELETE")
@@ -223,7 +225,7 @@ class CartControllerTest extends BaseControllerTest {
     @Test
     @ResetDB
     public void addCartItemFromCartPageTest_incorrectOfferingId() {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", "200")
                         .queryParam("action", "PLUS")
@@ -244,7 +246,7 @@ class CartControllerTest extends BaseControllerTest {
     @ResetDB
     public void updateCartItemFromCartPageTest_badRequest(String id,
                                                           String action) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/cart/items")
                         .queryParam("id", id)
                         .queryParam("action", action)
@@ -269,7 +271,7 @@ class CartControllerTest extends BaseControllerTest {
                                                String pageNumber,
                                                String pageSize,
                                                String action) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/items")
                         .queryParam("id", id)
                         .queryParam("search", search)
@@ -305,7 +307,7 @@ class CartControllerTest extends BaseControllerTest {
                                                           String pageNumber,
                                                           String pageSize,
                                                           String action) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/items")
                         .queryParam("id", id)
                         .queryParam("search", search)
@@ -332,7 +334,7 @@ class CartControllerTest extends BaseControllerTest {
                                                           String pageNumber,
                                                           String pageSize,
                                                           String action) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/items")
                         .queryParam("id", id)
                         .queryParam("search", search)
@@ -361,7 +363,7 @@ class CartControllerTest extends BaseControllerTest {
                                                    String price,
                                                    String title,
                                                    String imgPath) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/items/" + id)
                         .queryParam("action", action)
                         .build()
@@ -369,7 +371,7 @@ class CartControllerTest extends BaseControllerTest {
                 .exchange()
                 .expectStatus().is3xxRedirection();
 
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/items/" + id)
                 .exchange()
                 .expectStatus().isOk()
@@ -393,7 +395,7 @@ class CartControllerTest extends BaseControllerTest {
     @ResetDB
     public void updateCartItemFromOfferingPageTest_badRequest(String id,
                                                               String action) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/items/" + id)
                         .queryParam("action", action)
                         .build()
@@ -411,12 +413,21 @@ class CartControllerTest extends BaseControllerTest {
     @ResetDB
     public void updateCartItemFromOfferingPageTest_notFound(String id,
                                                               String action) {
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri(uriBuilder -> uriBuilder.path("/items/" + id)
                         .queryParam("action", action)
                         .build()
                 )
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    public void getCartItemsTest_unauthorized() {
+        webTestClient.get()
+                .uri("/cart/items")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().valueEquals(HttpHeaders.LOCATION, "/login");
     }
 }
