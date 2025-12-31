@@ -43,13 +43,13 @@ public class OfferingServiceImpl implements OfferingService {
     public Mono<OfferingDto> getOffering(long id) {
         return SecurityUtils.getUserId()
                 .flatMap(userId -> getOffering(userId, id))
-                .switchIfEmpty(getOffering(null, id));
+                .switchIfEmpty(Mono.defer(() -> getOffering(null, id)));
     }
 
     private Mono<OfferingDto> getOffering(Long userId, long offeringId) {
         return loadOfferingFromCache(userId, offeringId)
                 .switchIfEmpty(
-                        loadOfferingFromDb(userId, offeringId)
+                        Mono.defer(() -> loadOfferingFromDb(userId, offeringId))
                                 .flatMap(this::saveOfferingInCache)
                 );
     }
@@ -59,13 +59,13 @@ public class OfferingServiceImpl implements OfferingService {
         return SecurityUtils.getUserId()
                 .flatMap(userId ->
                         getOfferings(userId, search, sortType, pageNumber, pageSize))
-                .switchIfEmpty(getOfferings(null, search, sortType, pageNumber, pageSize));
+                .switchIfEmpty(Mono.defer(() -> getOfferings(null, search, sortType, pageNumber, pageSize)));
     }
 
     private Mono<OfferingPage> getOfferings(Long userId, String search, SortType sortType, int pageNumber, int pageSize) {
         return loadOfferingsFromCache(userId, search, sortType, pageNumber, pageSize)
                 .switchIfEmpty(
-                        loadOfferingsFromDb(userId, search, sortType, pageNumber, pageSize)
+                        Mono.defer(() -> loadOfferingsFromDb(userId, search, sortType, pageNumber, pageSize))
                                 .flatMap(offeringPage ->
                                         saveOfferingPageInCache(search, sortType, pageNumber, pageSize, offeringPage))
                 );

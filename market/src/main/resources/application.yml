@@ -40,6 +40,7 @@ offering:
 logging:
   level:
     org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG
+    org.springframework.web.reactive: TRACE
 
 payment:
   service:

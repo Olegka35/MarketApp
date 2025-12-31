@@ -1,6 +1,7 @@
 package com.tarasov.market.service;
 
 
+import com.tarasov.market.model.TestUserContext;
 import com.tarasov.market.model.db.OfferingWithCartItem;
 import com.tarasov.market.model.db.OrderWithItem;
 import com.tarasov.market.model.entity.Order;
@@ -10,7 +11,6 @@ import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.repository.OrderItemRepository;
 import com.tarasov.market.repository.OrderRepository;
 import com.tarasov.market.service.impl.OrderServiceImpl;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,7 +31,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled
 public class OrderServiceTest {
 
     @InjectMocks
@@ -53,7 +52,10 @@ public class OrderServiceTest {
     public void getOrdersTest() {
         when(orderRepository.findAllWithItems(1L)).thenReturn(generateTestOrders());
 
-        List<OrderDto> orders = orderService.getOrders().collectList().block();
+        List<OrderDto> orders = orderService.getOrders()
+                .collectList()
+                .contextWrite(TestUserContext.user())
+                .block();
 
         assertNotNull(orders);
         assertEquals(2, orders.size());
@@ -83,7 +85,9 @@ public class OrderServiceTest {
                 .thenReturn(generateTestOrders()
                         .filter(order -> order.id().equals(id)));
 
-        OrderDto order = orderService.getOrderById(id).block();
+        OrderDto order = orderService.getOrderById(id)
+                .contextWrite(TestUserContext.user())
+                .block();
 
         assertNotNull(order);
         assertEquals(2, order.items().size());
@@ -100,13 +104,15 @@ public class OrderServiceTest {
     public void getOrderByIdTest_notFound() {
         long id = 1L;
         when(orderRepository.findByIdWithItems(id, 1L)).thenReturn(Flux.empty());
-        assertThrows(NoSuchElementException.class, () -> orderService.getOrderById(id).block());
+        assertThrows(NoSuchElementException.class, () ->
+                orderService.getOrderById(id).contextWrite(TestUserContext.user()).block());
     }
 
     @Test
     public void createOrderTest_emptyCart() {
         when(cartRepository.findAllWithOffering(1L)).thenReturn(Flux.empty());
-        assertThrows(IllegalStateException.class, () -> orderService.createOrderFromCart().block());
+        assertThrows(IllegalStateException.class, () ->
+                orderService.createOrderFromCart().contextWrite(TestUserContext.user()).block());
     }
 
     @Test
@@ -134,7 +140,9 @@ public class OrderServiceTest {
                 .thenReturn(generateTestOrders().filter(order -> order.id().equals(1L)));
         when(paymentService.makePayment(any(), any())).thenReturn(Mono.just(BigDecimal.TEN));
 
-        orderService.createOrderFromCart().block();
+        orderService.createOrderFromCart()
+                .contextWrite(TestUserContext.user())
+                .block();
 
         verify(cartRepository).deleteByUserId(1L);
 
