@@ -5,13 +5,13 @@ import com.tarasov.payment.configuration.PostgresTestcontainer;
 import com.tarasov.payment.configuration.ResetBalance;
 import com.tarasov.payment.model.dto.BalanceDto;
 import com.tarasov.payment.model.dto.PaymentRequest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.context.ImportTestcontainers;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 @ImportTestcontainers(PostgresTestcontainer.class)
 @ExtendWith(BalanceResetExtension.class)
-@Disabled
 public class AccountControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;
 
     @Test
+    @WithMockUser(authorities = "ACCOUNT")
     public void getAccountBalanceTest() {
         webTestClient.get()
                 .uri("/account/1")
@@ -46,6 +46,7 @@ public class AccountControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = "ACCOUNT")
     public void getNonExistingAccountBalanceTest() {
         webTestClient.get()
                 .uri("/account/2")
@@ -54,6 +55,7 @@ public class AccountControllerTest {
     }
 
     @Test
+    @WithMockUser(authorities = "ACCOUNT")
     public void getIncorrectAccountBalanceTest() {
         webTestClient.get()
                 .uri("/account/-2")
@@ -63,6 +65,7 @@ public class AccountControllerTest {
 
     @Test
     @ResetBalance
+    @WithMockUser(authorities = "ACCOUNT")
     public void makePaymentTest() {
         webTestClient.post()
                 .uri("/account/1/payment")
@@ -78,6 +81,7 @@ public class AccountControllerTest {
 
     @Test
     @ResetBalance
+    @WithMockUser(authorities = "ACCOUNT")
     public void makePaymentToZeroTest() {
         webTestClient.post()
                 .uri("/account/1/payment")
@@ -93,6 +97,7 @@ public class AccountControllerTest {
 
     @Test
     @ResetBalance
+    @WithMockUser(authorities = "ACCOUNT")
     public void makeIncorrectPaymentTest() {
         webTestClient.post()
                 .uri("/account/1/payment")
@@ -103,6 +108,7 @@ public class AccountControllerTest {
 
     @Test
     @ResetBalance
+    @WithMockUser(authorities = "ACCOUNT")
     public void makePaymentForNonExistingAccountTest() {
         webTestClient.post()
                 .uri("/account/100/payment")
@@ -113,11 +119,38 @@ public class AccountControllerTest {
 
     @Test
     @ResetBalance
+    @WithMockUser(authorities = "ACCOUNT")
     public void makePaymentWithInsufficientAmountTest() {
         webTestClient.post()
                 .uri("/account/1/payment")
                 .bodyValue(new PaymentRequest(BigDecimal.valueOf(5001)))
                 .exchange()
                 .expectStatus().value(status -> assertEquals(402, status));
+    }
+
+    @Test
+    public void getAccountBalanceTest_unauthorized() {
+        webTestClient.get()
+                .uri("/account/1")
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
+    @Test
+    @WithMockUser(authorities = "USER")
+    public void getAccountBalanceTest_noGrants() {
+        webTestClient.get()
+                .uri("/account/1")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    public void makePaymentTest_unauthorized() {
+        webTestClient.post()
+                .uri("/account/1/payment")
+                .bodyValue(new PaymentRequest(BigDecimal.valueOf(1)))
+                .exchange()
+                .expectStatus().isUnauthorized();
     }
 }
