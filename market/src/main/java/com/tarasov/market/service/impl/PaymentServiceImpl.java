@@ -6,6 +6,7 @@ import com.tarasov.market.api.PaymentApi;
 import com.tarasov.market.model.BalanceInfo;
 import com.tarasov.market.model.PaymentRequest;
 import com.tarasov.market.service.PaymentService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -18,11 +19,10 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentApi paymentApi;
 
     public PaymentServiceImpl(PaymentApi paymentApi,
-                              WebClient webClient) {
+                              WebClient webClient,
+                              @Value("${PAYMENT_SERVICE_URL:http://localhost:8081}") String paymentServiceUrl) {
         ApiClient apiClient = new ApiClient(webClient);
-        if (System.getenv("PAYMENT_SERVICE_URL") != null) {
-            apiClient.setBasePath(System.getenv("PAYMENT_SERVICE_URL"));
-        }
+        apiClient.setBasePath(paymentServiceUrl);
         paymentApi.setApiClient(apiClient);
         this.paymentApi = paymentApi;
     }

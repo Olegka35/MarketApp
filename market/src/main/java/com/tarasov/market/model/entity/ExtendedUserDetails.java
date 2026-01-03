@@ -24,7 +24,7 @@ public class ExtendedUserDetails implements UserDetails {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+        this.authorities = List.of(new SimpleGrantedAuthority(role));
         this.enabled = true;
     }
 

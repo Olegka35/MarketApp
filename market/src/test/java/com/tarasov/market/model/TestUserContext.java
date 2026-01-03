@@ -39,7 +39,7 @@ public class TestUserContext {
 
     private static Authentication getAuthentication(Long ID, String username, String password, String role) {
         UserDetails userDetails
-                = new ExtendedUserDetails(ID, username, password, role);
+                = new ExtendedUserDetails(ID, username, password, "ROLE_" + role);
         return new UsernamePasswordAuthenticationToken(userDetails,  password, userDetails.getAuthorities());
     }
 }

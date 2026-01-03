@@ -38,8 +38,9 @@ public class OAuth2Configuration {
         oauth2.setDefaultClientRegistrationId("market-app");
 
         return WebClient.builder()
+                /*TODO:move to application properties
                 .codecs(strategies ->
-                        strategies.defaultCodecs().enableLoggingRequestDetails(true))
+                        strategies.defaultCodecs().enableLoggingRequestDetails(true))*/
                 .filter(oauth2)
                 .build();
     }

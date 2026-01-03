@@ -21,7 +21,7 @@ public class MarketUserDetailsService implements ReactiveUserDetailsService {
                 .map(user -> new ExtendedUserDetails(user.getId(),
                         user.getUsername(),
                         user.getPassword(),
-                        user.isAdmin() ? "ADMIN" : "USER")
+                        user.isAdmin() ? "ROLE_ADMIN" : "ROLE_USER")
                 )
                 .cast(UserDetails.class)
                 .switchIfEmpty(Mono.error(new UsernameNotFoundException(username)));
