@@ -23,4 +23,5 @@ public class Order {
     @ReadOnlyProperty
     private LocalDateTime createdDate;
     private BigDecimal totalPrice;
+    private Long userId;
 }

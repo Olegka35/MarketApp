@@ -3,6 +3,7 @@ package com.tarasov.market.service.impl;
 
 import com.tarasov.market.model.cache.OfferingCache;
 import com.tarasov.market.model.cache.OfferingPageCache;
+import com.tarasov.market.model.db.OfferingWithCartItem;
 import com.tarasov.market.model.entity.CartItem;
 import com.tarasov.market.model.entity.Offering;
 import com.tarasov.market.model.dto.OfferingDto;
@@ -14,9 +15,11 @@ import com.tarasov.market.repository.OfferingCacheRepository;
 import com.tarasov.market.repository.OfferingRepository;
 import com.tarasov.market.service.ImageService;
 import com.tarasov.market.service.OfferingService;
+import com.tarasov.market.service.security.SecurityUtils;
 import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
@@ -38,18 +41,31 @@ public class OfferingServiceImpl implements OfferingService {
 
     @Override
     public Mono<OfferingDto> getOffering(long id) {
-        return loadOfferingFromCache(id)
+        return SecurityUtils.getUserId()
+                .flatMap(userId -> getOffering(userId, id))
+                .switchIfEmpty(Mono.defer(() -> getOffering(null, id)));
+    }
+
+    private Mono<OfferingDto> getOffering(Long userId, long offeringId) {
+        return loadOfferingFromCache(userId, offeringId)
                 .switchIfEmpty(
-                        loadOfferingFromDb(id)
+                        Mono.defer(() -> loadOfferingFromDb(userId, offeringId))
                                 .flatMap(this::saveOfferingInCache)
                 );
     }
 
     @Override
     public Mono<OfferingPage> getOfferings(String search, SortType sortType, int pageNumber, int pageSize) {
-        return loadOfferingsFromCache(search, sortType, pageNumber, pageSize)
+        return SecurityUtils.getUserId()
+                .flatMap(userId ->
+                        getOfferings(userId, search, sortType, pageNumber, pageSize))
+                .switchIfEmpty(Mono.defer(() -> getOfferings(null, search, sortType, pageNumber, pageSize)));
+    }
+
+    private Mono<OfferingPage> getOfferings(Long userId, String search, SortType sortType, int pageNumber, int pageSize) {
+        return loadOfferingsFromCache(userId, search, sortType, pageNumber, pageSize)
                 .switchIfEmpty(
-                        loadOfferingsFromDb(search, sortType, pageNumber, pageSize)
+                        Mono.defer(() -> loadOfferingsFromDb(userId, search, sortType, pageNumber, pageSize))
                                 .flatMap(offeringPage ->
                                         saveOfferingPageInCache(search, sortType, pageNumber, pageSize, offeringPage))
                 );
@@ -57,6 +73,7 @@ public class OfferingServiceImpl implements OfferingService {
 
     @Override
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<Long> createOffering(String title, String description, BigDecimal price, FilePart image) {
         Offering offering = new Offering(title, description, image.filename(), price);
         return offeringRepository.save(offering)
@@ -73,20 +90,17 @@ public class OfferingServiceImpl implements OfferingService {
         };
     }
 
-    private Mono<OfferingDto> loadOfferingFromDb(Long offeringId) {
-        return offeringRepository.findByIdWithCart(offeringId)
+    private Mono<OfferingDto> loadOfferingFromDb(Long userId, Long offeringId) {
+        return loadOfferingDetails(userId, offeringId)
                 .switchIfEmpty(Mono.error(new NoSuchElementException()))
                 .map(OfferingDto::from);
     }
 
-    private Mono<OfferingDto> loadOfferingFromCache(Long offeringId) {
+    private Mono<OfferingDto> loadOfferingFromCache(Long userId, Long offeringId) {
         return offeringCacheRepository.findByOfferingId(offeringId)
                 .flatMap(offeringCache ->
-                        cartRepository.findByOfferingId(offeringId)
-                                .map(CartItem::getAmount)
-                                .switchIfEmpty(Mono.just(0))
-                                .map(amount -> collectOfferingDto(offeringCache, amount))
-                );
+                        countAmountInCart(userId, offeringId)
+                                .map(amount -> collectOfferingDto(offeringCache, amount)));
     }
 
     private Mono<OfferingDto> saveOfferingInCache(OfferingDto offeringDto) {
@@ -116,20 +130,20 @@ public class OfferingServiceImpl implements OfferingService {
                 amount);
     }
 
-    private Mono<OfferingPage> loadOfferingsFromCache(String search,
+    private Mono<OfferingPage> loadOfferingsFromCache(Long userId,
+                                                      String search,
                                                       SortType sortType,
                                                       int pageNumber,
                                                       int pageSize) {
         return offeringCacheRepository.findOfferingPage(search, sortType, pageNumber, pageSize)
-                .flatMap(cachedPage -> {
-                    List<Long> offeringIds = cachedPage.offerings().stream().map(OfferingCache::id).toList();
-                    return cartRepository.findByOfferingIdIn(offeringIds)
-                            .collectMap(CartItem::getOfferingId, CartItem::getAmount)
-                            .map(cartInfo -> collectOfferingPage(cachedPage, cartInfo));
-                });
+                .flatMap(cachedPage ->
+                        countOfferingItemsInCart(userId, cachedPage)
+                                .map(cartInfo ->
+                                        collectOfferingPage(cachedPage, cartInfo)));
     }
 
-    private Mono<OfferingPage> loadOfferingsFromDb(String search,
+    private Mono<OfferingPage> loadOfferingsFromDb(Long userId,
+                                                   String search,
                                                    SortType sortType,
                                                    int pageNumber,
                                                    int pageSize) {
@@ -137,7 +151,7 @@ public class OfferingServiceImpl implements OfferingService {
         if (!sortType.equals(SortType.NO)) {
             pageRequest.setSortField(convertSortTypeToField(sortType));
         }
-        return Mono.zip(offeringRepository.findOfferings(pageRequest, search)
+        return Mono.zip(offeringRepository.findOfferings(userId, pageRequest, search)
                                 .map(OfferingDto::from)
                                 .collectList(),
                         getOfferingAmount(search))
@@ -162,5 +176,35 @@ public class OfferingServiceImpl implements OfferingService {
         return StringUtils.isEmpty(search)
                 ? offeringRepository.count().map(Long::intValue)
                 : offeringRepository.countByTitleContainingOrDescriptionContaining(search, search);
+    }
+
+    private Mono<Map<Long, Integer>> countOfferingItemsInCart(Long userId, OfferingPageCache cachedPage) {
+        Mono<Map<Long, Integer>> offeringsInCartMap = Mono.just(Map.of());
+        if (userId != null) {
+            List<Long> offeringIds = cachedPage.offerings()
+                    .stream()
+                    .map(OfferingCache::id)
+                    .toList();
+            offeringsInCartMap = cartRepository.findByOfferingIdInAndUserId(offeringIds, userId)
+                    .collectMap(CartItem::getOfferingId, CartItem::getAmount);
+        }
+        return offeringsInCartMap;
+    }
+
+    private Mono<Integer> countAmountInCart(Long userId, Long offeringId) {
+        Mono<Integer> amountInCart = Mono.just(0);
+        if (userId != null) {
+            amountInCart = cartRepository.findByOfferingIdAndUserId(offeringId, userId)
+                    .map(CartItem::getAmount)
+                    .switchIfEmpty(Mono.just(0));
+        }
+        return amountInCart;
+    }
+
+    private Mono<OfferingWithCartItem> loadOfferingDetails(Long userId, Long offeringId) {
+        if (userId == null) {
+            return offeringRepository.findByIdWithEmptyCart(offeringId);
+        }
+        return offeringRepository.findByIdWithCart(offeringId, userId);
     }
 }

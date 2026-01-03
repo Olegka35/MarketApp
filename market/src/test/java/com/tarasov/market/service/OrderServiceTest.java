@@ -1,6 +1,7 @@
 package com.tarasov.market.service;
 
 
+import com.tarasov.market.model.TestUserContext;
 import com.tarasov.market.model.db.OfferingWithCartItem;
 import com.tarasov.market.model.db.OrderWithItem;
 import com.tarasov.market.model.entity.Order;
@@ -49,9 +50,12 @@ public class OrderServiceTest {
 
     @Test
     public void getOrdersTest() {
-        when(orderRepository.findAllWithItems()).thenReturn(generateTestOrders());
+        when(orderRepository.findAllWithItems(1L)).thenReturn(generateTestOrders());
 
-        List<OrderDto> orders = orderService.getOrders().collectList().block();
+        List<OrderDto> orders = orderService.getOrders()
+                .collectList()
+                .contextWrite(TestUserContext.user())
+                .block();
 
         assertNotNull(orders);
         assertEquals(2, orders.size());
@@ -77,11 +81,13 @@ public class OrderServiceTest {
     @Test
     public void getOrderByIdTest() {
         long id = 1L;
-        when(orderRepository.findByIdWithItems(id))
+        when(orderRepository.findByIdWithItems(id, 1L))
                 .thenReturn(generateTestOrders()
                         .filter(order -> order.id().equals(id)));
 
-        OrderDto order = orderService.getOrderById(id).block();
+        OrderDto order = orderService.getOrderById(id)
+                .contextWrite(TestUserContext.user())
+                .block();
 
         assertNotNull(order);
         assertEquals(2, order.items().size());
@@ -97,14 +103,16 @@ public class OrderServiceTest {
     @Test
     public void getOrderByIdTest_notFound() {
         long id = 1L;
-        when(orderRepository.findByIdWithItems(id)).thenReturn(Flux.empty());
-        assertThrows(NoSuchElementException.class, () -> orderService.getOrderById(id).block());
+        when(orderRepository.findByIdWithItems(id, 1L)).thenReturn(Flux.empty());
+        assertThrows(NoSuchElementException.class, () ->
+                orderService.getOrderById(id).contextWrite(TestUserContext.user()).block());
     }
 
     @Test
     public void createOrderTest_emptyCart() {
-        when(cartRepository.findAllWithOffering()).thenReturn(Flux.empty());
-        assertThrows(IllegalStateException.class, () -> orderService.createOrderFromCart().block());
+        when(cartRepository.findAllWithOffering(1L)).thenReturn(Flux.empty());
+        assertThrows(IllegalStateException.class, () ->
+                orderService.createOrderFromCart().contextWrite(TestUserContext.user()).block());
     }
 
     @Test
@@ -117,30 +125,33 @@ public class OrderServiceTest {
                 "Test2", "Test2", "test2.png", BigDecimal.valueOf(200),
                 11L, 4);
 
-        when(cartRepository.findAllWithOffering())
+        when(cartRepository.findAllWithOffering(1L))
                 .thenReturn(Flux.just(item1, item2));
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
                     Order order = invocation.getArgument(0);
                     order.setId(1L);
+                    order.setUserId(1L);
                     return Mono.just(order);
                 });
         when(orderItemRepository.saveAll(anyList())).thenReturn(Flux.just());
-        when(cartRepository.deleteAll()).thenReturn(Mono.empty().then());
-        when(orderRepository.findByIdWithItems(1L))
+        when(cartRepository.deleteByUserId(1L)).thenReturn(Mono.empty().then());
+        when(orderRepository.findByIdWithItems(1L, 1L))
                 .thenReturn(generateTestOrders().filter(order -> order.id().equals(1L)));
-        when(paymentService.makePayment(any())).thenReturn(Mono.just(BigDecimal.TEN));
+        when(paymentService.makePayment(any(), any())).thenReturn(Mono.just(BigDecimal.TEN));
 
-        orderService.createOrderFromCart().block();
+        orderService.createOrderFromCart()
+                .contextWrite(TestUserContext.user())
+                .block();
 
-        verify(cartRepository).deleteAll();
+        verify(cartRepository).deleteByUserId(1L);
 
         ArgumentCaptor<Order> orderArgumentCaptor = ArgumentCaptor.forClass(Order.class);
         verify(orderRepository).save(orderArgumentCaptor.capture());
         Order savedOrder = orderArgumentCaptor.getValue();
         assertEquals(BigDecimal.valueOf(900), savedOrder.getTotalPrice());
 
-        verify(paymentService).makePayment(BigDecimal.valueOf(900));
+        verify(paymentService).makePayment(1L, BigDecimal.valueOf(900));
 
         ArgumentCaptor<List<OrderItem>> orderItemsCaptor = ArgumentCaptor.forClass(List.class);
         verify(orderItemRepository).saveAll(orderItemsCaptor.capture());

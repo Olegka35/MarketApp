@@ -21,8 +21,14 @@ public class OfferingRepositoryCustomImpl implements OfferingRepositoryCustom {
 
     @Override
     public Flux<OfferingWithCartItem> findOfferings(PageRequest pageRequest, String search) {
-        return fetchData(prepareSQLQuery(pageRequest, search),
-                collectQueryParams(pageRequest, search));
+        return fetchData(prepareSQLQuery(null, pageRequest, search),
+                collectQueryParams(null, pageRequest, search));
+    }
+
+    @Override
+    public Flux<OfferingWithCartItem> findOfferings(Long userId, PageRequest pageRequest, String search) {
+        return fetchData(prepareSQLQuery(userId, pageRequest, search),
+                collectQueryParams(userId, pageRequest, search));
     }
 
     private Flux<OfferingWithCartItem> fetchData(String sqlQuery, Map<String, Object> params) {
@@ -41,8 +47,10 @@ public class OfferingRepositoryCustomImpl implements OfferingRepositoryCustom {
                 .all();
     }
 
-    private String prepareSQLQuery(PageRequest pageRequest, String search) {
-        StringBuilder sqlQuery = new StringBuilder(SQLConstants.FETCH_OFFERINGS_SQL);
+    private String prepareSQLQuery(Long userId, PageRequest pageRequest, String search) {
+        StringBuilder sqlQuery = userId != null
+                ? new StringBuilder(SQLConstants.FETCH_OFFERINGS_SQL_FOR_USER)
+                : new StringBuilder(SQLConstants.FETCH_OFFERINGS_SQL_ANONYMOUS);
         if (StringUtils.isNotEmpty(search)) {
             sqlQuery.append(SQLConstants.SEARCH_CONDITION_SQL);
         }
@@ -53,13 +61,16 @@ public class OfferingRepositoryCustomImpl implements OfferingRepositoryCustom {
         return sqlQuery.toString();
     }
 
-    private Map<String, Object> collectQueryParams(PageRequest pageRequest, String search) {
+    private Map<String, Object> collectQueryParams(Long userId, PageRequest pageRequest, String search) {
         Map<String, Object> queryParams = new HashMap<>(
                 Map.of("limit", pageRequest.getPageSize(),
                         "offset", pageRequest.getPageSize() * (pageRequest.getPageNumber() - 1))
         );
         if (StringUtils.isNotEmpty(search)) {
             queryParams.put("search", search);
+        }
+        if (userId != null) {
+            queryParams.put("user_id", userId);
         }
         return queryParams;
     }

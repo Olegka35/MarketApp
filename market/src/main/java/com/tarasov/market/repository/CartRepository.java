@@ -24,13 +24,15 @@ public interface CartRepository extends ReactiveCrudRepository<CartItem, Long> {
            o.price offering_price
     FROM cart c
     JOIN offerings o ON o.id = c.offering_id
+    WHERE c.user_id = :userId
     """)
-    Flux<OfferingWithCartItem> findAllWithOffering();
+    Flux<OfferingWithCartItem> findAllWithOffering(Long userId);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM cart WHERE offering_id = :offeringId)")
-    Mono<Boolean> existsByOfferingId(Long offeringId);
+    @Query("SELECT EXISTS(SELECT 1 FROM cart WHERE offering_id = :offeringId AND user_id = :userId)")
+    Mono<Boolean> existsByOfferingIdAndUserId(Long offeringId, Long userId);
 
-    Mono<CartItem> findByOfferingId(Long offeringId);
-    Flux<CartItem> findByOfferingIdIn(List<Long> offeringIds);
-    Mono<Void> deleteByOfferingId(Long offeringId);
+    Mono<CartItem> findByOfferingIdAndUserId(Long offeringId, Long userId);
+    Flux<CartItem> findByOfferingIdInAndUserId(List<Long> offeringIds, Long userId);
+    Mono<Void> deleteByOfferingIdAndUserId(Long offeringId, Long userId);
+    Mono<Void> deleteByUserId(Long userId);
 }

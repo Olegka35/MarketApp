@@ -17,6 +17,20 @@ spring:
     redis:
       host: localhost
       port: 6379
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${AUTH_SERVER_URL}/realms/marketplace
+        registration:
+          market-app:
+            provider: keycloak
+            authorization-grant-type: client_credentials
+            client-id: market-app
+            client-secret: ${MARKET_APP_SECRET}
+            scope: openid
+            client-authentication-method: client_secret_post
 
 offering:
   images-directory: ${IMAGE_DIRECTORY}
@@ -25,6 +39,7 @@ offering:
 logging:
   level:
     org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG
+    org.springframework.web.reactive: TRACE
 
 payment:
   service:

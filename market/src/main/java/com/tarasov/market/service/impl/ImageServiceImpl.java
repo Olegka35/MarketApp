@@ -19,7 +19,7 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public Mono<Void> uploadImage(FilePart image) {
         Path uploadDir = Paths.get(imageUploadDirectory);
-        Path filePath = uploadDir.resolve(image.filename());
+        Path filePath = uploadDir.resolve("image").resolve(image.filename());
         return image.transferTo(filePath.toFile());
     }
 }

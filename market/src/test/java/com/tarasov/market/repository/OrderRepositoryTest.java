@@ -18,7 +18,7 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getOrdersTest() {
-        List<OrderWithItem> orderItems = orderRepository.findAllWithItems().collectList().block();
+        List<OrderWithItem> orderItems = orderRepository.findAllWithItems(1L).collectList().block();
 
         assertNotNull(orderItems);
         assertEquals(2, orderItems.size());
@@ -30,7 +30,7 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
     @Test
     @ResetDB
     public void getOrderByIDTest() {
-        List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(1L).collectList().block();
+        List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(1L, 1L).collectList().block();
 
         assertNotNull(orderItems);
         assertEquals(BigDecimal.valueOf(1000), orderItems.getFirst().totalPrice());
@@ -39,7 +39,7 @@ public class OrderRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void getNonExistingOrderByIDTest() {
-        List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(100L).collectList().block();
+        List<OrderWithItem> orderItems = orderRepository.findByIdWithItems(100L, 1L).collectList().block();
         assertNotNull(orderItems);
         assertTrue(orderItems.isEmpty());
     }

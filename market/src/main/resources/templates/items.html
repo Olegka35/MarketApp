@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
 
 <head>
     <meta charset="utf-8">
@@ -18,9 +18,19 @@
                     <h2>
                         <span class="badge text-bg-success">Витрина магазина</span>
                     </h2>
-                    <a href="/items/new" class="btn btn-secondary ms-auto bi bi-plus-circle"> Новый товар</a>
-                    <a href="/orders" class="btn btn-secondary bi bi-file-earmark-text"> Заказы</a>
-                    <a href="/cart/items" class="btn btn-secondary bi bi-cart4"> Корзина</a>
+                    <a th:if="${isAdmin}" href="/items/new" class="btn btn-secondary ms-auto bi bi-plus-circle"> Новый товар</a>
+                    <a sec:authorize="isAuthenticated()" href="/orders" class="btn btn-secondary bi bi-file-earmark-text ms-auto"> Заказы</a>
+                    <a sec:authorize="isAuthenticated()" href="/cart/items" class="btn btn-secondary bi bi-cart4"> Корзина</a>
+                    <a sec:authorize="isAuthenticated()"
+                       href="/logout"
+                       class="btn btn btn-outline-danger bi bi-box-arrow-left"
+                       data-bs-toggle="tooltip"
+                       data-bs-placement="top"
+                       title="Выход из системы"
+                       th:text="' ' + ${#authentication.name}">
+                        Имя пользователя
+                    </a>
+                    <a th:if="${#authentication == null || !#authentication.isAuthenticated()}" href="/login" class="btn btn-outline-success bi bi-box-arrow-in-right ms-auto"> Войти</a>
                 </div>
             </div>
         </div>
@@ -55,7 +65,7 @@
             <div class="col" th:each="item : ${itemsRow}">
                 <div class="card" th:if="${item.id() != -1}">
                     <a th:href="${'/items/'+item.id()}">
-                        <img th:src="${'/'+item.imgPath()}" class="card-img-top" style="height: 300px; object-fit: cover;" alt="Нет изображения">
+                        <img th:src="${'/image/'+item.imgPath()}" class="card-img-top" style="height: 300px; object-fit: cover;" alt="Нет изображения">
                     </a>
                     <div class="card-body">
                         <h5 class="card-title" th:text="${item.title()}"></h5>

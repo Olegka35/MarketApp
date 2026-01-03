@@ -3,12 +3,14 @@ package com.tarasov.market.controller;
 import com.tarasov.market.configuration.ResetDB;
 import com.tarasov.market.model.BalanceInfo;
 import com.tarasov.market.model.PaymentRequest;
+import com.tarasov.market.model.TestUserContext;
 import com.tarasov.market.repository.CartRepository;
 import com.tarasov.market.service.PaymentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.util.ReflectionTestUtils;
 import reactor.core.publisher.Mono;
 
@@ -19,6 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 
 public class OrderControllerTest extends BaseControllerTest {
 
@@ -39,7 +42,7 @@ public class OrderControllerTest extends BaseControllerTest {
     public void createNewOrderTest() throws Exception {
         when(paymentApi.makePayment(eq(1L), any()))
                 .thenReturn(Mono.just(new BalanceInfo().balance(BigDecimal.ONE)));
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri("/buy")
                 .exchange()
                 .expectStatus().is3xxRedirection();
@@ -50,7 +53,7 @@ public class OrderControllerTest extends BaseControllerTest {
     @ResetDB
     public void createNewOrderTest_emptyCart() throws Exception {
         cartRepository.deleteAll().block();
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri("/buy")
                 .exchange()
                 .expectStatus().isNotFound();
@@ -61,7 +64,7 @@ public class OrderControllerTest extends BaseControllerTest {
     public void createNewOrderTest_unsufficientBalance() throws Exception {
         when(paymentApi.makePayment(eq(1L), any()))
                 .thenReturn(Mono.error(new Exception()));
-        webTestClient.post()
+        webTestClient.mutateWith(TestUserContext.mockUser()).post()
                 .uri("/buy")
                 .exchange()
                 .expectStatus().is4xxClientError();
@@ -70,7 +73,7 @@ public class OrderControllerTest extends BaseControllerTest {
 
     @Test
     public void getOrdersTest() throws Exception {
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/orders")
                 .exchange()
                 .expectStatus().isOk()
@@ -86,7 +89,7 @@ public class OrderControllerTest extends BaseControllerTest {
 
     @Test
     public void getOrderByIdTest() throws Exception {
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/orders/1")
                 .exchange()
                 .expectStatus().isOk()
@@ -103,7 +106,7 @@ public class OrderControllerTest extends BaseControllerTest {
 
     @Test
     public void getOrderByIdAfterCreationTest() throws Exception {
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/orders/1?newOrder=true")
                 .exchange()
                 .expectStatus().isOk()
@@ -120,7 +123,7 @@ public class OrderControllerTest extends BaseControllerTest {
 
     @Test
     public void getOrderByIdTest_incorrectId() throws Exception {
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/orders/0")
                 .exchange()
                 .expectStatus().isBadRequest();
@@ -128,8 +131,46 @@ public class OrderControllerTest extends BaseControllerTest {
 
     @Test
     public void getOrderByIdTest_orderNotExist() throws Exception {
-        webTestClient.get()
+        webTestClient.mutateWith(TestUserContext.mockUser()).get()
                 .uri("/orders/5")
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    @ResetDB
+    public void createNewOrderTest_unauthorized() throws Exception {
+        webTestClient.post()
+                .uri("/buy")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().valueEquals(HttpHeaders.LOCATION, "/login");
+    }
+
+    @Test
+    public void getOrdersTest_unauthorized() throws Exception {
+        webTestClient.get()
+                .uri("/orders")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().valueEquals(HttpHeaders.LOCATION, "/login");
+    }
+
+    @Test
+    public void getOrderByIdTest_unauthorized() throws Exception {
+        webTestClient.get()
+                .uri("/orders/1")
+                .exchange()
+                .expectStatus().isFound()
+                .expectHeader().valueEquals(HttpHeaders.LOCATION, "/login");
+    }
+
+    @Test
+    public void getOrderByIdTest_someoneElseOrder() throws Exception {
+        webTestClient
+                .mutateWith(TestUserContext.configureTestUser(2L, "user", "password", "USER"))
+                .get()
+                .uri("/orders/1")
                 .exchange()
                 .expectStatus().isNotFound();
     }

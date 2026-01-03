@@ -1,3 +1,10 @@
 logging:
   level:
     io.r2dbc.postgresql: DEBUG
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: test

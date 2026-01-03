@@ -27,9 +27,10 @@ public class ImageServiceTest {
     private Path tempDir;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws IOException {
         imageService = new ImageServiceImpl();
         ReflectionTestUtils.setField(imageService, "imageUploadDirectory", tempDir.toString());
+        Files.createDirectories(tempDir.resolve("image"));
     }
 
     @Test
@@ -39,7 +40,7 @@ public class ImageServiceTest {
 
         imageService.uploadImage(image).block();
 
-        Path expectedPath = tempDir.resolve("test.png");
+        Path expectedPath = tempDir.resolve("image").resolve("test.png");
 
         assertTrue(Files.exists(expectedPath));
         assertEquals("test content", Files.readString(expectedPath));

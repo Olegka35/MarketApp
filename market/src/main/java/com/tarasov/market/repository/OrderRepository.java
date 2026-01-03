@@ -20,8 +20,9 @@ public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
     FROM orders o
     JOIN order_items oi on oi.order_id = o.id
     JOIN offerings on offerings.id = oi.offering_id
+    WHERE o.user_id = :userId
     """)
-    Flux<OrderWithItem> findAllWithItems();
+    Flux<OrderWithItem> findAllWithItems(Long userId);
 
     @Query("""
     SELECT 
@@ -34,7 +35,7 @@ public interface OrderRepository extends ReactiveCrudRepository<Order, Long> {
     FROM orders o
     JOIN order_items oi on oi.order_id = o.id
     JOIN offerings on offerings.id = oi.offering_id
-    WHERE o.id = :id
+    WHERE o.id = :id AND o.user_id = :userId
     """)
-    Flux<OrderWithItem> findByIdWithItems(Long id);
+    Flux<OrderWithItem> findByIdWithItems(Long id, Long userId);
 }

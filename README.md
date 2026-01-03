@@ -20,6 +20,16 @@ DB_USERNAME={DB username}
 DB_PASSWORD={DB password}
 IMAGE_DIRECTORY={path to directory with offering images}
 ```
+3. Specify environment variables for keycloak credentials:
+```
+KC_ADMIN_USERNAME=admin
+KC_ADMIN_PASSWORD=admin
+```
+4. Create **market-app** client in authorization server with *Service accounts roles*.
+5. Specify **market-app** secret in environment variables:
+```
+MARKET_APP_SECRET={secret}
+```
 
 ## 3. Generate Open API classes for server and client parts of Payment Service
 - Build market-app-parent module with children: mvn clean install 
